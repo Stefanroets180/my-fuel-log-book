@@ -1,0 +1,453 @@
+# Fresh Deployment Guide
+
+This guide walks you through deploying the Fuel Logbook app from scratch when you:
+1. Download the ZIP folder from v0
+2. Upload the project to GitHub
+3. Deploy from a different/new Vercel account
+
+---
+
+## Part 1: Download and Prepare the Project
+
+### Step 1: Download the ZIP
+
+1. In v0, click the **three dots** (⋮) in the top right of the code block
+2. Select **"Download ZIP"**
+3. Save the file to your computer (e.g., `fuel-logbook-app.zip`)
+
+### Step 2: Extract the Project
+
+1. Extract the ZIP file to a folder on your computer
+2. Open the extracted folder - you should see:
+   \`\`\`
+   fuel-logbook-app/
+   ├── app/
+   ├── components/
+   ├── lib/
+   ├── scripts/
+   ├── public/
+   ├── package.json
+   ├── README.md
+   ├── NEON_DATABASE_SETUP_INSTRUCTIONS.md
+   ├── VERCEL_BLOB_SETUP_INSTRUCTIONS.md
+   ├── AWS_S3_SETUP_INSTRUCTIONS.md
+   └── ... other files
+   \`\`\`
+
+### Step 3: Initialize Git (if not already initialized)
+
+Open a terminal/command prompt in the project folder:
+
+\`\`\`bash
+# Navigate to the project folder
+cd path/to/fuel-logbook-app
+
+# Initialize git repository
+git init
+
+# Add all files
+git add .
+
+# Create initial commit
+git commit -m "Initial commit: Fuel Logbook App"
+\`\`\`
+
+---
+
+## Part 2: Upload to GitHub
+
+### Step 1: Create a New GitHub Repository
+
+1. Go to [github.com](https://github.com) and sign in
+2. Click the **"+"** icon in the top right
+3. Select **"New repository"**
+4. Fill in the details:
+   - **Repository name**: `fuel-logbook-app` (or your preferred name)
+   - **Description**: "Fuel consumption tracking app with km/L calculations"
+   - **Visibility**: Choose **Private** (recommended) or Public
+   - **DO NOT** initialize with README, .gitignore, or license (we already have these)
+5. Click **"Create repository"**
+
+### Step 2: Push Your Code to GitHub
+
+GitHub will show you commands to push an existing repository. Copy and run them:
+
+\`\`\`bash
+# Add GitHub as remote origin
+git remote add origin https://github.com/YOUR-USERNAME/fuel-logbook-app.git
+
+# Push to GitHub
+git branch -M main
+git push -u origin main
+\`\`\`
+
+Replace `YOUR-USERNAME` with your actual GitHub username.
+
+**Verify:** Refresh your GitHub repository page - you should see all your files uploaded.
+
+---
+
+## Part 3: Deploy to Vercel
+
+### Step 1: Sign Up / Sign In to Vercel
+
+1. Go to [vercel.com](https://vercel.com)
+2. Click **"Sign Up"** (or "Log In" if you have an account)
+3. Choose **"Continue with GitHub"** (recommended for easy integration)
+4. Authorize Vercel to access your GitHub account
+
+### Step 2: Import Your Project
+
+1. On the Vercel dashboard, click **"Add New..."** → **"Project"**
+2. You'll see a list of your GitHub repositories
+3. Find `fuel-logbook-app` and click **"Import"**
+
+### Step 3: Configure Project Settings
+
+Vercel will show the import configuration screen:
+
+1. **Project Name**: Keep as `fuel-logbook-app` or customize
+2. **Framework Preset**: Should auto-detect as **Next.js** ✓
+3. **Root Directory**: Leave as `./` (default)
+4. **Build Command**: Leave as default (`next build`)
+5. **Output Directory**: Leave as default (`.next`)
+6. **Install Command**: Leave as default (`npm install`)
+
+**DO NOT click "Deploy" yet!** We need to set up integrations first.
+
+---
+
+## Part 4: Set Up Neon Database
+
+### Step 1: Create Neon Account and Database
+
+Follow the detailed instructions in **[NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)**
+
+Quick summary:
+1. Go to [neon.tech](https://neon.tech) and sign up
+2. Create a new project: `fuel-logbook-db`
+3. Choose region: **Europe (Frankfurt)** or **Europe (London)** for South Africa
+4. Copy your connection strings
+
+### Step 2: Connect Neon to Vercel
+
+**Option A: Automatic Integration (Recommended)**
+
+1. In your Vercel project configuration screen, scroll down
+2. Look for **"Add Integration"** or go to project **Settings** → **Integrations**
+3. Search for **"Neon"**
+4. Click **"Add Integration"**
+5. Authorize and select your Neon project
+6. Vercel will automatically add all database environment variables ✓
+
+**Option B: Manual Setup**
+
+1. In Vercel project settings, go to **Environment Variables**
+2. Add these variables:
+   - `NEON_DATABASE_URL` = Your Neon pooled connection string
+   - `DATABASE_URL_UNPOOLED` = Your Neon direct connection string
+3. Select all environments (Production, Preview, Development)
+4. Click **"Save"**
+
+### Step 3: Create Database Schema
+
+You have two options:
+
+**Option A: Using Neon SQL Editor (Easiest)**
+
+1. Go to [console.neon.tech](https://console.neon.tech)
+2. Select your project
+3. Click **"SQL Editor"**
+4. Open the file `scripts/001_create_fuel_entries_table.sql` from your downloaded project
+5. Copy the entire SQL content
+6. Paste into Neon SQL Editor
+7. Click **"Run"** (or press Ctrl+Enter)
+8. You should see: `CREATE TABLE` success message ✓
+
+**Option B: After First Deployment**
+
+1. Deploy the app first (see Part 5)
+2. The app can run migrations automatically
+3. Or use the Vercel CLI to run scripts (see NEON_DATABASE_SETUP_INSTRUCTIONS.md)
+
+---
+
+## Part 5: Set Up Vercel Blob
+
+### Step 1: Create Blob Store
+
+Follow the detailed instructions in **[VERCEL_BLOB_SETUP_INSTRUCTIONS.md](./VERCEL_BLOB_SETUP_INSTRUCTIONS.md)**
+
+Quick summary:
+
+1. In your Vercel project, go to **"Storage"** tab
+2. Click **"Create Database"** or **"Connect Store"**
+3. Select **"Blob"**
+4. Name it: `fuel-receipts-blob`
+5. Choose region (same as your Neon database for best performance)
+6. Click **"Create"**
+
+Vercel automatically adds `BLOB_READ_WRITE_TOKEN` to your environment variables ✓
+
+---
+
+## Part 6: Deploy Your Application
+
+### Step 1: Deploy
+
+Now that integrations are set up:
+
+1. Go back to your Vercel project
+2. Click the **"Deploy"** button
+3. Vercel will:
+   - Install dependencies
+   - Build your Next.js app
+   - Deploy to production
+4. Wait for deployment to complete (usually 1-2 minutes)
+
+### Step 2: Verify Deployment
+
+1. Once deployed, click **"Visit"** to open your app
+2. You should see the Fuel Logbook interface
+3. Try adding a test fuel entry to verify everything works
+
+---
+
+## Part 7: Set Up AWS S3 (Optional)
+
+If you want to export data to AWS S3, follow **[AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)**
+
+Quick summary:
+1. Create S3 bucket in AWS Console
+2. Create IAM user with S3 access
+3. Generate access keys
+4. Add AWS credentials to Vercel environment variables:
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+   - `AWS_REGION`
+   - `AWS_S3_BUCKET_NAME`
+5. Redeploy your app
+
+---
+
+## Part 8: Local Development Setup
+
+### Step 1: Install Dependencies
+
+\`\`\`bash
+cd fuel-logbook-app
+npm install
+\`\`\`
+
+### Step 2: Pull Environment Variables
+
+\`\`\`bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Link to your Vercel project
+vercel link
+
+# Pull environment variables
+vercel env pull .env.local
+\`\`\`
+
+This creates `.env.local` with all your environment variables from Vercel.
+
+### Step 3: Run Development Server
+
+\`\`\`bash
+npm run dev
+\`\`\`
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## Part 9: Verification Checklist
+
+Before using the app in production, verify:
+
+- [ ] App is deployed and accessible via Vercel URL
+- [ ] Neon database is connected (check Vercel → Settings → Environment Variables)
+- [ ] Database table `fuel_entries` exists (check Neon SQL Editor)
+- [ ] Vercel Blob is connected (check Vercel → Storage)
+- [ ] Can add a fuel entry successfully
+- [ ] Can upload a receipt image
+- [ ] Can view fuel entries in dashboard
+- [ ] Can delete a fuel entry
+- [ ] Can export logbook (HTML download works)
+- [ ] (Optional) AWS S3 export works if configured
+
+---
+
+## Part 10: Troubleshooting Common Issues
+
+### Issue: "Database connection failed"
+
+**Solutions:**
+1. Check Vercel → Settings → Environment Variables
+2. Verify `DATABASE_URL` is set correctly
+3. Test connection in Neon Console
+4. Redeploy the app after adding variables
+
+### Issue: "Table does not exist"
+
+**Solutions:**
+1. Run the SQL migration script in Neon SQL Editor
+2. Copy content from `scripts/001_create_fuel_entries_table.sql`
+3. Paste and run in Neon Console → SQL Editor
+
+### Issue: "Receipt upload failed"
+
+**Solutions:**
+1. Verify Vercel Blob is created (Vercel → Storage)
+2. Check `BLOB_READ_WRITE_TOKEN` exists in environment variables
+3. Redeploy the app
+4. Check file size (must be < 4.5 MB on free tier)
+
+### Issue: "Environment variables not found locally"
+
+**Solutions:**
+1. Run `vercel link` to link your local project
+2. Run `vercel env pull .env.local` to download variables
+3. Restart your development server (`npm run dev`)
+
+### Issue: Build fails on Vercel
+
+**Solutions:**
+1. Check the build logs in Vercel dashboard
+2. Ensure `package.json` has all required dependencies
+3. Verify Next.js version compatibility
+4. Try redeploying
+
+---
+
+## Part 11: Updating Your App
+
+### Making Changes
+
+1. Edit files locally
+2. Test changes: `npm run dev`
+3. Commit changes:
+   \`\`\`bash
+   git add .
+   git commit -m "Description of changes"
+   \`\`\`
+4. Push to GitHub:
+   \`\`\`bash
+   git push origin main
+   \`\`\`
+5. Vercel automatically deploys the changes ✓
+
+### Adding New Environment Variables
+
+1. Add in Vercel → Settings → Environment Variables
+2. Pull locally: `vercel env pull .env.local`
+3. Restart dev server
+
+---
+
+## Part 12: Cost Summary (Free Tier)
+
+Your app runs entirely on free tiers:
+
+| Service | Free Tier | Sufficient For |
+|---------|-----------|----------------|
+| **Vercel** | Unlimited deployments, 100 GB bandwidth | Personal use, small teams |
+| **Neon** | 0.5 GB storage, 191.9 compute hours/month | Thousands of fuel entries |
+| **Vercel Blob** | 1 GB storage, 100 GB bandwidth | Hundreds of receipt images |
+| **AWS S3** | 5 GB storage, 20,000 GET requests (first year) | Optional backup |
+
+**Total monthly cost: R0** (on free tiers)
+
+---
+
+## Part 13: Production Best Practices
+
+### Security
+
+- [ ] Never commit `.env.local` to GitHub
+- [ ] Use environment variables for all secrets
+- [ ] Keep dependencies updated: `npm update`
+- [ ] Enable Vercel's security headers (automatic)
+
+### Backups
+
+- [ ] Regularly export data to S3 (if configured)
+- [ ] Download HTML exports periodically
+- [ ] Neon automatically backs up your database
+
+### Monitoring
+
+- [ ] Check Vercel Analytics for usage
+- [ ] Monitor Neon compute hours (free tier: 191.9 hours/month)
+- [ ] Monitor Blob storage usage (free tier: 1 GB)
+
+---
+
+## Part 14: Getting Help
+
+### Documentation
+
+- **This Project**: See [README.md](./README.md)
+- **Neon Setup**: [NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)
+- **Blob Setup**: [VERCEL_BLOB_SETUP_INSTRUCTIONS.md](./VERCEL_BLOB_SETUP_INSTRUCTIONS.md)
+- **AWS S3 Setup**: [AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)
+
+### External Resources
+
+- [Vercel Documentation](https://vercel.com/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Neon Documentation](https://neon.tech/docs)
+- [Vercel Blob Documentation](https://vercel.com/docs/storage/vercel-blob)
+
+### Support
+
+- **Vercel**: [vercel.com/help](https://vercel.com/help)
+- **Neon**: [Discord Community](https://discord.gg/neon)
+- **GitHub Issues**: Create an issue in your repository
+
+---
+
+## Quick Start Summary
+
+For experienced developers, here's the TL;DR:
+
+\`\`\`bash
+# 1. Download ZIP from v0, extract, and push to GitHub
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/YOUR-USERNAME/fuel-logbook-app.git
+git push -u origin main
+
+# 2. Deploy to Vercel
+# - Import from GitHub at vercel.com
+# - Add Neon integration (auto-adds DATABASE_URL)
+# - Add Vercel Blob (auto-adds BLOB_READ_WRITE_TOKEN)
+
+# 3. Create database schema
+# - Go to console.neon.tech → SQL Editor
+# - Run scripts/001_create_fuel_entries_table.sql
+
+# 4. Local development
+npm install
+vercel link
+vercel env pull .env.local
+npm run dev
+\`\`\`
+
+---
+
+## Congratulations! 🎉
+
+Your Fuel Logbook app is now deployed and ready to track your vehicle's fuel consumption, calculate km/L, store receipts, and help with SARS tax compliance!
+
+**Next Steps:**
+1. Add your first fuel entry
+2. Upload a receipt
+3. Track your consumption over time
+4. Export data for tax purposes
+
+Happy tracking! 🚗⛽
