@@ -1,342 +1,302 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Loader2, Trash2, Briefcase, ImageIcon, ExternalLink, AlertCircle } from "lucide-react"
-import type { FuelEntry } from "@/lib/types"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import type React from "react"
 
-interface FuelLogDashboardProps {
-  refreshKey?: number
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Loader2, X, ImageIcon } from "lucide-react"
+
+interface FuelEntryFormProps {
+    onSuccess?: () => void
 }
 
-export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
-  const [entries, setEntries] = useState<FuelEntry[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [setupRequired, setSetupRequired] = useState(false)
+export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
+    const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+    const [receiptFile, setReceiptFile] = useState<File | null>(null)
 
-  const fetchEntries = async () => {
-    try {
-      console.log("[v0] Fetching entries from API...")
-      const response = await fetch("/api/fuel-entries")
-
-      console.log("[v0] Response status:", response.status)
-
-      const contentType = response.headers.get("content-type")
-      if (!response.ok) {
-        if (contentType?.includes("application/json")) {
-          const errorData = await response.json()
-          console.error("[v0] API error:", errorData)
-          setSetupRequired(errorData.setupRequired || false)
-          throw new Error(errorData.details || errorData.error || "Failed to fetch entries")
-        } else {
-          const errorText = await response.text()
-          console.error("[v0] Non-JSON error response:", errorText)
-          throw new Error("Server error: Unable to connect to database. Please check your Neon configuration.")
-        }
-      }
-
-      const data = await response.json()
-      console.log("[v0] Received data:", data)
-      setEntries(data.entries)
-      setError(null)
-      setSetupRequired(false)
-    } catch (error) {
-      console.error("[v0] Error fetching entries:", error)
-      setError(error instanceof Error ? error.message : "Failed to fetch entries")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchEntries()
-  }, [refreshKey])
-
-  const handleDelete = async (id: number) => {
-    setDeletingId(id)
-    try {
-      const response = await fetch(`/api/fuel-entries/${id}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) throw new Error("Failed to delete entry")
-
-      setEntries((prev) => prev.filter((entry) => entry.id !== id))
-    } catch (error) {
-      console.error("Error deleting entry:", error)
-      alert("Failed to delete entry. Please try again.")
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-ZA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+    const [formData, setFormData] = useState({
+        date: new Date().toISOString().split("T")[0],
+        odometer_reading: "",
+        liters: "",
+        price_per_liter: "",
+        petrol_station: "",
+        is_work_travel: false,
+        notes: "",
     })
-  }
 
-  const formatCurrency = (amount: number) => {
-    return `R ${amount.toFixed(2)}`
-  }
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target
+        setFormData((prev) => ({ ...prev, [name]: value }))
+    }
 
-  const totalSpent = entries.reduce((sum, entry) => sum + Number(entry.total_cost), 0)
-  const totalLiters = entries.reduce((sum, entry) => sum + Number(entry.liters), 0)
-  const averageKmPerLiter =
-    entries.filter((e) => e.km_per_liter).reduce((sum, entry) => sum + Number(entry.km_per_liter), 0) /
-      entries.filter((e) => e.km_per_liter).length || 0
-  const workTravelEntries = entries.filter((e) => e.is_work_travel).length
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
 
-  if (isLoading) {
+        console.log("[v0] File selected:", file.name, file.type, file.size)
+
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+            alert("Please upload an image file")
+            return
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert("File size must be less than 5MB")
+            return
+        }
+
+        setReceiptFile(file)
+
+        // Upload immediately
+        setIsUploading(true)
+        console.log("[v0] Starting upload to /api/upload-receipt")
+
+        try {
+            const formData = new FormData()
+            formData.append("file", file)
+
+            const response = await fetch("/api/upload-receipt", {
+                method: "POST",
+                body: formData,
+            })
+
+            console.log("[v0] Upload response status:", response.status)
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                console.error("[v0] Upload failed:", errorData)
+                throw new Error(errorData.error || "Upload failed")
+            }
+
+            const data = await response.json()
+            console.log("[v0] Upload successful, URL:", data.url)
+            setReceiptUrl(data.url)
+        } catch (error) {
+            console.error("[v0] Upload error:", error)
+            alert(`Failed to upload receipt: ${error instanceof Error ? error.message : "Unknown error"}`)
+            setReceiptFile(null)
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const handleRemoveReceipt = () => {
+        console.log("[v0] Removing receipt")
+        setReceiptUrl(null)
+        setReceiptFile(null)
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+
+        console.log("[v0] Submitting fuel entry with receipt URL:", receiptUrl)
+
+        try {
+            const totalCost = Number.parseFloat(formData.liters) * Number.parseFloat(formData.price_per_liter)
+
+            const response = await fetch("/api/fuel-entries", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    date: new Date(formData.date).toISOString(),
+                    odometer_reading: Number.parseInt(formData.odometer_reading),
+                    liters: Number.parseFloat(formData.liters),
+                    price_per_liter: Number.parseFloat(formData.price_per_liter),
+                    petrol_station: formData.petrol_station || null,
+                    receipt_image_url: receiptUrl,
+                    is_work_travel: formData.is_work_travel,
+                    notes: formData.notes || null,
+                }),
+            })
+
+            if (!response.ok) throw new Error("Failed to create entry")
+
+            console.log("[v0] Fuel entry saved successfully")
+
+            // Reset form
+            setFormData({
+                date: new Date().toISOString().split("T")[0],
+                odometer_reading: "",
+                liters: "",
+                price_per_liter: "",
+                petrol_station: "",
+                is_work_travel: false,
+                notes: "",
+            })
+            setReceiptUrl(null)
+            setReceiptFile(null)
+
+            onSuccess?.()
+        } catch (error) {
+            console.error("[v0] Submit error:", error)
+            alert("Failed to save fuel entry. Please try again.")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const totalCost =
+        formData.liters && formData.price_per_liter
+            ? (Number.parseFloat(formData.liters) * Number.parseFloat(formData.price_per_liter)).toFixed(2)
+            : "0.00"
+
     return (
-      <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            {setupRequired ? "Database Setup Required" : "Database Error"}
-          </CardTitle>
-          <CardDescription>
-            {setupRequired
-              ? "The database table needs to be created before you can use the app."
-              : "Unable to load fuel entries. Please check your database configuration."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error Details</AlertTitle>
-            <AlertDescription className="font-mono text-xs mt-2">{error}</AlertDescription>
-          </Alert>
-
-          <div className="space-y-3 rounded-lg bg-muted p-4">
-            <p className="text-sm font-semibold">Setup Instructions:</p>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-              <li>
-                Open the <code className="bg-background px-1.5 py-0.5 rounded text-xs">scripts</code> folder in your
-                project
-              </li>
-              <li>
-                Locate the file:{" "}
-                <code className="bg-background px-1.5 py-0.5 rounded text-xs">001_create_fuel_entries_table.sql</code>
-              </li>
-              <li>
-                Go to your{" "}
-                <a
-                  href="https://console.neon.tech"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Neon Console
-                </a>
-              </li>
-              <li>Select your project and navigate to the SQL Editor</li>
-              <li>Copy and paste the SQL script content into the editor</li>
-              <li>Click "Run" to create the fuel_entries table</li>
-              <li>Return here and click the "Retry Connection" button below</li>
-            </ol>
-          </div>
-
-          <div className="space-y-2 rounded-lg bg-muted p-4">
-            <p className="text-sm font-semibold">Environment Variables Check:</p>
-            <p className="text-xs text-muted-foreground">
-              Make sure <code className="bg-background px-1.5 py-0.5 rounded">NEON_NEON_DATABASE_URL</code> is set in
-              your Vercel project settings or local .env file.
-            </p>
-          </div>
-
-          <Button
-            onClick={() => {
-              setIsLoading(true)
-              setError(null)
-              fetchEntries()
-            }}
-            className="w-full"
-          >
-            Retry Connection
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Total Spent</CardDescription>
-            <CardTitle className="text-3xl">{formatCurrency(totalSpent)}</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Total Liters</CardDescription>
-            <CardTitle className="text-3xl">{totalLiters.toFixed(1)} L</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Avg. Consumption</CardDescription>
-            <CardTitle className="text-3xl">{averageKmPerLiter.toFixed(1)} km/L</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Work Travel</CardDescription>
-            <CardTitle className="text-3xl">{workTravelEntries}</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Fuel Entries</CardTitle>
-          <CardDescription>Your complete fuel purchase history</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {entries.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No fuel entries yet. Add your first entry to get started!
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {entries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex flex-col gap-4 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-lg">{formatDate(entry.date)}</span>
-                        {entry.is_work_travel && (
-                          <Badge variant="secondary" className="gap-1">
-                            <Briefcase className="h-3 w-3" />
-                            Work Travel
-                          </Badge>
-                        )}
-                        {entry.petrol_station && <Badge variant="outline">{entry.petrol_station}</Badge>}
-                      </div>
-
-                      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Odometer:</span>{" "}
-                          <span className="font-medium">{entry.odometer_reading.toLocaleString()} km</span>
+            <CardHeader>
+                <CardTitle>Add Fuel Entry</CardTitle>
+                <CardDescription>Record your fuel purchase and track consumption</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="date">Date</Label>
+                            <Input id="date" name="date" type="date" value={formData.date} onChange={handleInputChange} required />
                         </div>
-                        <div>
-                          <span className="text-muted-foreground">Liters:</span>{" "}
-                          <span className="font-medium">{Number(entry.liters).toFixed(2)} L</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Price/L:</span>{" "}
-                          <span className="font-medium">{formatCurrency(Number(entry.price_per_liter))}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Total:</span>{" "}
-                          <span className="font-semibold text-lg">{formatCurrency(Number(entry.total_cost))}</span>
-                        </div>
-                        {entry.km_per_liter && (
-                          <div>
-                            <span className="text-muted-foreground">Consumption:</span>{" "}
-                            <span className="font-medium">{Number(entry.km_per_liter).toFixed(2)} km/L</span>
-                          </div>
-                        )}
-                        {entry.distance_traveled && (
-                          <div>
-                            <span className="text-muted-foreground">Distance:</span>{" "}
-                            <span className="font-medium">{entry.distance_traveled} km</span>
-                          </div>
-                        )}
-                      </div>
 
-                      {entry.notes && (
-                        <p className="text-sm text-muted-foreground italic border-l-2 border-border pl-3">
-                          {entry.notes}
-                        </p>
-                      )}
-
-                      {entry.receipt_image_url && (
-                        <div className="flex items-center gap-2">
-                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                          <a
-                            href={entry.receipt_image_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline flex items-center gap-1"
-                          >
-                            View Receipt
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
+                        <div className="space-y-2">
+                            <Label htmlFor="odometer_reading">Odometer Reading (km)</Label>
+                            <Input
+                                id="odometer_reading"
+                                name="odometer_reading"
+                                type="number"
+                                placeholder="125000"
+                                value={formData.odometer_reading}
+                                onChange={handleInputChange}
+                                required
+                            />
                         </div>
-                      )}
+
+                        <div className="space-y-2">
+                            <Label htmlFor="liters">Liters</Label>
+                            <Input
+                                id="liters"
+                                name="liters"
+                                type="number"
+                                step="0.01"
+                                placeholder="45.50"
+                                value={formData.liters}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="price_per_liter">Price per Liter (ZAR)</Label>
+                            <Input
+                                id="price_per_liter"
+                                name="price_per_liter"
+                                type="number"
+                                step="0.01"
+                                placeholder="22.50"
+                                value={formData.price_per_liter}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="petrol_station">Petrol Station</Label>
+                            <Input
+                                id="petrol_station"
+                                name="petrol_station"
+                                type="text"
+                                placeholder="Shell, Engen, BP, etc."
+                                value={formData.petrol_station}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Total Cost (ZAR)</Label>
+                            <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-lg font-semibold">
+                                R {totalCost}
+                            </div>
+                        </div>
                     </div>
 
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" disabled={deletingId === entry.id} className="shrink-0">
-                          {deletingId === entry.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Fuel Entry?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete this fuel entry from {formatDate(entry.date)}. This action
-                            cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(entry.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
+                    <div className="space-y-2">
+                        <Label htmlFor="receipt">Receipt Image (Optional)</Label>
+                        <div className="flex flex-col gap-4">
+                            {!receiptUrl ? (
+                                <div className="flex items-center gap-4">
+                                    <Input
+                                        id="receipt"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                        disabled={isUploading}
+                                        className="flex-1"
+                                    />
+                                    {isUploading && (
+                                        <div className="flex items-center gap-2">
+                                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                            <span className="text-sm text-muted-foreground">Uploading...</span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="relative inline-block">
+                                    <div className="flex items-center gap-4 rounded-lg border border-border bg-muted p-4">
+                                        <ImageIcon className="h-8 w-8 text-green-600" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-green-600">Receipt uploaded successfully</p>
+                                            <p className="text-xs text-muted-foreground">{receiptFile?.name}</p>
+                                        </div>
+                                        <Button type="button" variant="ghost" size="icon" onClick={handleRemoveReceipt} className="h-8 w-8">
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                        <Checkbox
+                            id="is_work_travel"
+                            checked={formData.is_work_travel}
+                            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_work_travel: checked as boolean }))}
+                        />
+                        <Label htmlFor="is_work_travel" className="cursor-pointer font-normal">
+                            Work Travel (for SARS tax purposes)
+                        </Label>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="notes">Notes (Optional)</Label>
+                        <Textarea
+                            id="notes"
+                            name="notes"
+                            placeholder="Add any additional notes..."
+                            value={formData.notes}
+                            onChange={handleInputChange}
+                            rows={3}
+                        />
+                    </div>
+
+                    <Button type="submit" disabled={isSubmitting || isUploading} className="w-full">
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            "Add Fuel Entry"
+                        )}
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
+    )
 }
