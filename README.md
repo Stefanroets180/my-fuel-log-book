@@ -5,53 +5,58 @@ A comprehensive Next.js application for tracking vehicle fuel consumption, expen
 ## Features
 
 - **Fuel Entry Tracking**: Record fuel purchases with date, odometer reading, liters, price per liter (ZAR), and petrol station
-- **Receipt Management**: Upload and store receipt images using Vercel Blob
-- **Automatic Calculations**: 
-  - Total cost per fill-up
-  - Kilometers per liter (km/L) consumption
-  - Distance traveled between fill-ups
+- **Receipt Management**: Upload and store receipt images in AWS S3 with automatic AVIF conversion
+- **Automatic Calculations**:
+    - Total cost per fill-up
+    - Kilometers per liter (km/L) consumption
+    - Distance traveled between fill-ups
 - **Work Travel Tracking**: Mark entries for SARS (South African Revenue Service) tax purposes
 - **Statistics Dashboard**: View total spent, total liters, average consumption, and work travel summaries
 - **Export Options**:
-  - Download HTML reports with full logbook data
-  - Backup to AWS S3 in JSON format
+    - Download HTML reports with full logbook data
+    - Backup to AWS S3 in JSON format
 - **Data Management**: Delete entries with automatic receipt cleanup
+- **Image Optimization**: Automatic JPEG/PNG to AVIF conversion (60-80% smaller files)
 
 ## Tech Stack
 
 - **Framework**: Next.js 16 with App Router
 - **Database**: Neon Postgres (serverless)
-- **File Storage**: Vercel Blob (receipt images)
+- **File Storage**: AWS S3 (receipt images in AVIF format)
 - **Cloud Backup**: AWS S3
 - **UI Components**: shadcn/ui with Radix UI
 - **Styling**: Tailwind CSS v4
+- **Image Processing**: Sharp (JPEG/PNG to AVIF conversion)
 
-## 📚 Setup Guides
+## � Setup Guides
 
 This project includes comprehensive step-by-step setup guides:
 
 1. **[NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)** - Complete guide for setting up your Neon Postgres database
-   - Creating a Neon account and project
-   - Connecting to Vercel
-   - Running database migrations
-   - Local development setup
-   - Troubleshooting common issues
+    - Creating a Neon account and project
+    - Connecting to Vercel
+    - Running database migrations
+    - Local development setup
+    - Troubleshooting common issues
 
-2. **[VERCEL_BLOB_SETUP_INSTRUCTIONS.md](./VERCEL_BLOB_SETUP_INSTRUCTIONS.md)** - Complete guide for setting up Vercel Blob storage
-   - Enabling Blob storage in Vercel
-   - Getting your access token
-   - Local development configuration
-   - Usage monitoring and limits
-   - Security best practices
+2. **[AWS_S3_RECEIPT_SETUP.md](./AWS_S3_RECEIPT_SETUP.md)** - Complete guide for AWS S3 receipt storage (REQUIRED)
+    - Creating an S3 bucket via AWS Console
+    - Setting up IAM users and permissions (no CLI required)
+    - Generating access keys
+    - Configuring environment variables
+    - Understanding AVIF conversion
+    - Security best practices
 
-3. **[AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)** - Complete guide for AWS S3 backup (optional)
-   - Creating an S3 bucket via AWS Console
-   - Setting up IAM users and permissions (no CLI required)
-   - Generating access keys
-   - Configuring environment variables
-   - Security best practices
+3. **[AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)** - Guide for AWS S3 data backup (optional)
+    - Setting up a separate bucket for data exports
+    - Exporting logbook data to S3
 
-**👉 Start with the Neon and Vercel Blob guides first, then optionally set up AWS S3 for backups.**
+4. **[FRESH_DEPLOYMENT_GUIDE.md](./FRESH_DEPLOYMENT_GUIDE.md)** - Complete deployment guide
+    - Downloading and uploading to GitHub
+    - Deploying from a fresh Vercel account
+    - Setting up all integrations
+
+**� Start with the Neon and AWS S3 Receipt guides first, then optionally set up data export to S3.**
 
 ## Quick Start
 
@@ -60,7 +65,7 @@ This project includes comprehensive step-by-step setup guides:
 - Node.js 18+ installed
 - Vercel account (free tier works)
 - Neon account (free tier works)
-- AWS account (optional, for S3 backups)
+- AWS account (required for receipt storage)
 
 ### Installation Steps
 
@@ -72,15 +77,15 @@ This project includes comprehensive step-by-step setup guides:
    \`\`\`
 
 3. **Set up Neon Database**:
-   - Follow **[NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)**
-   - Create your Neon project
-   - Connect to Vercel or set up environment variables
-   - Run the database migration script
+    - Follow **[NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)**
+    - Create your Neon project
+    - Connect to Vercel or set up environment variables
+    - Run the database migration script
 
-4. **Set up Vercel Blob**:
-   - Follow **[VERCEL_BLOB_SETUP_INSTRUCTIONS.md](./VERCEL_BLOB_SETUP_INSTRUCTIONS.md)**
-   - Enable Blob storage in your Vercel project
-   - Get your `BLOB_READ_WRITE_TOKEN`
+4. **Set up AWS S3 Receipts**:
+    - Follow **[AWS_S3_RECEIPT_SETUP.md](./AWS_S3_RECEIPT_SETUP.md)**
+    - Create your S3 bucket and IAM user
+    - Set up environment variables
 
 5. **Pull environment variables** (if using Vercel):
    \`\`\`bash
@@ -95,8 +100,8 @@ This project includes comprehensive step-by-step setup guides:
    \`\`\`
 
 7. **Open your browser**:
-   - Navigate to [http://localhost:3000](http://localhost:3000)
-   - Start adding fuel entries!
+    - Navigate to [http://localhost:3000](http://localhost:3000)
+    - Start adding fuel entries!
 
 ### Database Setup
 
@@ -124,24 +129,22 @@ See **[NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.m
 
 **Neon Database** (automatically set when using Neon integration):
 \`\`\`env
-NEON_DATABASE_URL="postgresql://..."
-DATABASE_URL_UNPOOLED="postgresql://..."
+NEON_NEON_DATABASE_URL="postgresql://..."
 \`\`\`
 
-**Vercel Blob** (automatically set when using Blob integration):
+**AWS S3 for Receipts** (REQUIRED - see AWS_S3_RECEIPT_SETUP.md):
 \`\`\`env
-BLOB_READ_WRITE_TOKEN="vercel_blob_rw_..."
+AWS_ACCESS_KEY_ID="your-access-key"
+AWS_SECRET_ACCESS_KEY="your-secret-key"
+AWS_REGION="af-south-1"
+AWS_S3_BUCKET_NAME="your-bucket-name"
 \`\`\`
 
 ### Optional Variables
 
-**AWS S3** (for backup functionality):
-\`\`\`env
-AWS_ACCESS_KEY_ID="your-access-key"
-AWS_SECRET_ACCESS_KEY="your-secret-key"
-AWS_REGION="your-region"
-AWS_S3_BUCKET_NAME="your-bucket-name"
-\`\`\`
+**AWS S3** (for data backup functionality - uses same credentials as receipts):
+- Uses the same AWS credentials as receipt storage
+- Just needs the bucket configured
 
 **How to add environment variables:**
 - **In Vercel**: Settings → Environment Variables
@@ -153,21 +156,24 @@ AWS_S3_BUCKET_NAME="your-bucket-name"
 ### Adding Fuel Entries
 
 1. **Fill in the form** with:
-   - **Date**: When you filled up
-   - **Odometer Reading**: Current km on your odometer
-   - **Liters**: How many liters you purchased
-   - **Price per Liter**: Cost per liter in ZAR (e.g., 23.95)
-   - **Petrol Station**: Name of the station (optional)
-   - **Receipt Image**: Upload a photo of your receipt (optional)
-   - **Work Travel**: Check if this is for work (SARS purposes)
-   - **Notes**: Any additional information (optional)
+    - **Date**: When you filled up
+    - **Odometer Reading**: Current km on your odometer
+    - **Liters**: How many liters you purchased
+    - **Price per Liter**: Cost per liter in ZAR (e.g., 23.95)
+    - **Petrol Station**: Name of the station (optional)
+    - **Receipt Image**: Upload a photo of your receipt (automatically converted to AVIF)
+    - **Work Travel**: Check if this is for work (SARS purposes)
+    - **Notes**: Any additional information (optional)
 
 2. **Click "Add Fuel Entry"**
 
-3. **Automatic calculations**:
-   - Total cost is calculated automatically
-   - km/L is calculated from the previous entry
-   - Distance traveled is calculated from odometer difference
+3. **Automatic processes**:
+    - Total cost is calculated automatically
+    - Receipt image is converted from JPEG/PNG to AVIF format
+    - Image is uploaded to AWS S3
+    - Compression ratio is displayed (typically 60-80% smaller)
+    - km/L is calculated from the previous entry
+    - Distance traveled is calculated from odometer difference
 
 ### Understanding the Dashboard
 
@@ -191,9 +197,9 @@ The dashboard shows:
 **Download HTML Report:**
 1. Click "Export Report" button
 2. An HTML file is generated with:
-   - All fuel entries in a formatted table
-   - Statistics summary
-   - SARS work travel summary
+    - All fuel entries in a formatted table
+    - Statistics summary
+    - SARS work travel summary
 3. The file downloads automatically
 4. Open in any browser, print, or email
 
@@ -209,7 +215,7 @@ The dashboard shows:
 1. Click the **trash icon** on any entry
 2. Confirm the deletion in the dialog
 3. The entry is removed from the database
-4. Receipt image is automatically deleted from Blob storage
+4. Receipt image is automatically deleted from AWS S3
 
 **⚠️ Warning:** Deletion is permanent and cannot be undone!
 
@@ -251,7 +257,7 @@ The `fuel_entries` table structure:
 | `price_per_liter` | DECIMAL(10,2) | Price per liter in ZAR |
 | `total_cost` | DECIMAL(10,2) | Total cost (liters × price) |
 | `petrol_station` | VARCHAR(255) | Name of petrol station |
-| `receipt_url` | TEXT | URL to receipt image in Blob storage |
+| `receipt_url` | TEXT | URL to receipt image in AWS S3 |
 | `is_work_travel` | BOOLEAN | Flag for SARS work travel |
 | `notes` | TEXT | Additional notes |
 | `km_per_liter` | DECIMAL(10,2) | Calculated fuel consumption |
@@ -266,7 +272,7 @@ The `fuel_entries` table structure:
 - `DELETE /api/fuel-entries/[id]` - Delete entry and associated receipt
 
 ### File Upload
-- `POST /api/upload-receipt` - Upload receipt image to Vercel Blob
+- `POST /api/upload-receipt` - Upload receipt image, convert to AVIF, store in AWS S3
 
 ### Export
 - `POST /api/export-s3` - Export all data to AWS S3 bucket
@@ -288,26 +294,30 @@ git push -u origin main
 3. Import your GitHub repository
 4. Vercel will auto-detect Next.js
 
-### Step 3: Add Integrations
+### Step 3: Add Neon Integration
 1. In Vercel project settings, go to "Storage"
 2. Add **Neon** integration (connects database)
-3. Add **Blob** integration (enables receipt uploads)
-4. Environment variables are automatically configured
+3. Environment variables are automatically configured
 
-### Step 4: Deploy
+### Step 4: Add AWS S3 Environment Variables
+1. Follow [AWS_S3_RECEIPT_SETUP.md](./AWS_S3_RECEIPT_SETUP.md) to create your S3 bucket and IAM user
+2. In Vercel: Settings → Environment Variables
+3. Add all 4 AWS variables (see guide for details)
+
+### Step 5: Deploy
 1. Click "Deploy"
 2. Wait for build to complete
 3. Your app is live!
 
-### Step 5: Run Database Migration
+### Step 6: Run Database Migration
 1. Go to your Neon Console
 2. Open SQL Editor
 3. Run the `scripts/001_create_fuel_entries_table.sql` script
 
-### Step 6: (Optional) Add AWS S3
-1. Follow [AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)
-2. Add AWS environment variables in Vercel Settings → Environment Variables
-3. Redeploy
+### Step 7: Test Receipt Upload
+1. Add a fuel entry with a receipt image
+2. Verify it uploads successfully and shows compression ratio
+3. Check your S3 bucket to see the AVIF file
 
 ## Cost Breakdown
 
@@ -320,11 +330,12 @@ git push -u origin main
 - ✅ Instant wake-up
 - **Cost: FREE**
 
-**Vercel Blob (Free Tier):**
-- ✅ 1 GB storage (~200-500 receipt images)
-- ✅ 100 GB bandwidth/month
-- ✅ 4.5 MB max file size
-- **Cost: FREE**
+**AWS S3 (Cape Town - af-south-1):**
+- Storage: $0.023/GB/month
+- PUT requests: $0.005 per 1,000 uploads
+- GET requests: $0.0004 per 1,000 views
+- **Estimated for 50 receipts/month: < $0.01/month**
+- **Estimated for 1 year (600 receipts): ~$0.12/month**
 
 **Vercel Hosting (Hobby Plan):**
 - ✅ Unlimited deployments
@@ -332,12 +343,13 @@ git push -u origin main
 - ✅ Global CDN
 - **Cost: FREE**
 
-**AWS S3 (Optional):**
-- Storage: ~$0.023/GB/month
-- Requests: Minimal
-- **Estimated: < $1/month for personal use**
+**Total Monthly Cost: ~$0.01** (essentially free for personal use)
 
-**Total Monthly Cost: FREE** (or < $1 with S3 backups)
+### Why AVIF Saves Money
+
+- **Before**: 50 JPEG receipts × 2.5 MB = 125 MB storage
+- **After**: 50 AVIF receipts × 800 KB = 40 MB storage
+- **Savings**: 68% less storage = 68% lower S3 costs
 
 ## Troubleshooting
 
@@ -357,11 +369,20 @@ git push -u origin main
 **Problem**: "Failed to upload receipt"
 
 **Solutions**:
-- Verify `BLOB_READ_WRITE_TOKEN` is set
-- Check Blob integration is connected in Vercel
-- Ensure file size is under 4.5 MB (free tier limit)
+- Verify all AWS environment variables are set correctly
+- Check IAM user has correct S3 permissions
+- Ensure S3 bucket exists and is in the correct region
 - Verify file is an image (jpg, png, webp)
-- See [VERCEL_BLOB_SETUP_INSTRUCTIONS.md](./VERCEL_BLOB_SETUP_INSTRUCTIONS.md) for detailed troubleshooting
+- Check file size is under 10 MB (before conversion)
+- See [AWS_S3_RECEIPT_SETUP.md](./AWS_S3_RECEIPT_SETUP.md) for detailed troubleshooting
+
+**Problem**: "Image conversion failed"
+
+**Solutions**:
+- Ensure the uploaded file is a valid image
+- Check that Sharp library is installed (`npm install sharp`)
+- Verify the image isn't corrupted
+- Try a different image format (JPEG or PNG)
 
 ### S3 Export Issues
 
@@ -407,7 +428,7 @@ fuel-logbook-app/
 │   │   │   ├── route.ts          # GET, POST fuel entries
 │   │   │   └── [id]/route.ts     # DELETE fuel entry
 │   │   ├── upload-receipt/
-│   │   │   └── route.ts          # Upload receipt to Blob
+│   │   │   └── route.ts          # Upload receipt to S3 (with AVIF conversion)
 │   │   └── export-s3/
 │   │       └── route.ts          # Export to AWS S3
 │   ├── page.tsx                  # Main page
@@ -424,9 +445,10 @@ fuel-logbook-app/
 │   └── s3-client.ts              # AWS S3 client
 ├── scripts/
 │   └── 001_create_fuel_entries_table.sql  # Database schema
-├── AWS_S3_SETUP_INSTRUCTIONS.md
+├── AWS_S3_RECEIPT_SETUP.md       # Receipt storage setup (REQUIRED)
+├── AWS_S3_SETUP_INSTRUCTIONS.md  # Data backup setup (optional)
 ├── NEON_DATABASE_SETUP_INSTRUCTIONS.md
-├── VERCEL_BLOB_SETUP_INSTRUCTIONS.md
+├── FRESH_DEPLOYMENT_GUIDE.md
 └── README.md
 \`\`\`
 
@@ -460,18 +482,21 @@ npm start
 
 ✅ **Environment Variables**: Never commit `.env.local` to version control
 ✅ **Database**: Use connection pooling (Neon handles this automatically)
-✅ **File Uploads**: Validate file types and sizes
+✅ **File Uploads**: Validate file types and sizes before conversion
 ✅ **API Routes**: Implement rate limiting for production
-✅ **AWS Credentials**: Use IAM users with minimal permissions
+✅ **AWS Credentials**: Use IAM users with minimal permissions (receipts folder only)
+✅ **S3 Bucket**: Keep private (no public access)
 ✅ **HTTPS**: Always use HTTPS in production (Vercel provides this)
+✅ **Image Processing**: Server-side conversion prevents malicious uploads
 
 ## Support & Resources
 
 ### Documentation
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Neon Documentation](https://neon.tech/docs)
-- [Vercel Blob Documentation](https://vercel.com/docs/storage/vercel-blob)
 - [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
+- [Sharp Documentation](https://sharp.pixelplumbing.com/)
+- [AVIF Format Info](https://en.wikipedia.org/wiki/AVIF)
 
 ### Getting Help
 - Check the setup guides in this repository
