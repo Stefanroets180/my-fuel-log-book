@@ -23,7 +23,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       try {
         await del(entry.receipt_image_url)
       } catch (error) {
-        console.error("[v0] Error deleting receipt image:", error)
+        console.error("Error deleting receipt image:", error)
         // Continue with entry deletion even if image deletion fails
       }
     }
@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Error deleting fuel entry:", error)
+    console.error("Error deleting fuel entry:", error)
     return NextResponse.json({ error: "Failed to delete fuel entry" }, { status: 500 })
   }
 }

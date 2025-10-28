@@ -45,7 +45,7 @@ export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
         const file = e.target.files?.[0]
         if (!file) return
 
-        console.log("[v0] File selected:", file.name, file.type, file.size)
+        console.log("File selected:", file.name, file.type, file.size)
 
         // Validate file type
         if (!file.type.startsWith("image/")) {
@@ -62,7 +62,7 @@ export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
         setReceiptFile(file)
 
         setIsUploading(true)
-        console.log("[v0] Starting upload to /api/upload-receipt (will convert to AVIF)")
+        console.log("Starting upload to /api/upload-receipt (will convert to AVIF)")
 
         try {
             const formData = new FormData()
@@ -73,17 +73,17 @@ export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
                 body: formData,
             })
 
-            console.log("[v0] Upload response status:", response.status)
+            console.log("Upload response status:", response.status)
 
             if (!response.ok) {
                 const errorData = await response.json()
-                console.error("[v0] Upload failed:", errorData)
+                console.error("Upload failed:", errorData)
                 throw new Error(errorData.error || "Upload failed")
             }
 
             const data = await response.json()
-            console.log("[v0] Upload successful, URL:", data.url)
-            console.log("[v0] Compression ratio:", data.compressionRatio)
+            console.log("Upload successful, URL:", data.url)
+            console.log("Compression ratio:", data.compressionRatio)
 
             setReceiptUrl(data.url)
             setCompressionInfo({
@@ -92,7 +92,7 @@ export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
                 ratio: data.compressionRatio,
             })
         } catch (error) {
-            console.error("[v0] Upload error:", error)
+            console.error("Upload error:", error)
             alert(`Failed to upload receipt: ${error instanceof Error ? error.message : "Unknown error"}`)
             setReceiptFile(null)
         } finally {
@@ -101,7 +101,7 @@ export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
     }
 
     const handleRemoveReceipt = () => {
-        console.log("[v0] Removing receipt")
+        console.log("Removing receipt")
         setReceiptUrl(null)
         setReceiptFile(null)
         setCompressionInfo(null)
@@ -111,7 +111,7 @@ export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
         e.preventDefault()
         setIsSubmitting(true)
 
-        console.log("[v0] Submitting fuel entry with receipt URL:", receiptUrl)
+        console.log("Submitting fuel entry with receipt URL:", receiptUrl)
 
         try {
             const totalCost = Number.parseFloat(formData.liters) * Number.parseFloat(formData.price_per_liter)
@@ -133,7 +133,7 @@ export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
 
             if (!response.ok) throw new Error("Failed to create entry")
 
-            console.log("[v0] Fuel entry saved successfully")
+            console.log("Fuel entry saved successfully")
 
             // Reset form
             setFormData({
@@ -150,7 +150,7 @@ export function FuelEntryForm({ onSuccess }: FuelEntryFormProps) {
 
             onSuccess?.()
         } catch (error) {
-            console.error("[v0] Submit error:", error)
+            console.error("Submit error:", error)
             alert("Failed to save fuel entry. Please try again.")
         } finally {
             setIsSubmitting(false)

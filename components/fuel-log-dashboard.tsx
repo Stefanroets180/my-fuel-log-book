@@ -32,32 +32,32 @@ export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
 
     const fetchEntries = async () => {
         try {
-            console.log("[v0] Fetching entries from API...")
+            console.log("Fetching entries from API...")
             const response = await fetch("/api/fuel-entries")
 
-            console.log("[v0] Response status:", response.status)
+            console.log("Response status:", response.status)
 
             const contentType = response.headers.get("content-type")
             if (!response.ok) {
                 if (contentType?.includes("application/json")) {
                     const errorData = await response.json()
-                    console.error("[v0] API error:", errorData)
+                    console.error("API error:", errorData)
                     setSetupRequired(errorData.setupRequired || false)
                     throw new Error(errorData.details || errorData.error || "Failed to fetch entries")
                 } else {
                     const errorText = await response.text()
-                    console.error("[v0] Non-JSON error response:", errorText)
+                    console.error("Non-JSON error response:", errorText)
                     throw new Error("Server error: Unable to connect to database. Please check your Neon configuration.")
                 }
             }
 
             const data = await response.json()
-            console.log("[v0] Received data:", data)
+            console.log("Received data:", data)
             setEntries(data.entries)
             setError(null)
             setSetupRequired(false)
         } catch (error) {
-            console.error("[v0] Error fetching entries:", error)
+            console.error("Error fetching entries:", error)
             setError(error instanceof Error ? error.message : "Failed to fetch entries")
         } finally {
             setIsLoading(false)

@@ -75,7 +75,7 @@ export async function POST() {
       summary: exportData.summary,
     })
   } catch (error: any) {
-    console.error("[v0] Error exporting to S3:", error)
+    console.error("Error exporting to S3:", error)
 
     // Check if it's an AWS configuration error
     if (error.message?.includes("AWS credentials not configured")) {

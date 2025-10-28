@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server"
 // GET all fuel entries
 export async function GET() {
   try {
-    console.log("[v0] Fetching fuel entries from database...")
+    console.log("Fetching fuel entries from database...")
 
     try {
       const entries = await sql`
@@ -12,12 +12,12 @@ export async function GET() {
         ORDER BY date DESC, created_at DESC
       `
 
-      console.log("[v0] Successfully fetched", entries.length, "entries")
+      console.log("Successfully fetched", entries.length, "entries")
       return NextResponse.json({ entries })
     } catch (dbError: any) {
       // Check if error is due to missing table
       if (dbError.message?.includes("relation") && dbError.message?.includes("does not exist")) {
-        console.error("[v0] Table 'fuel_entries' does not exist")
+        console.error("Table 'fuel_entries' does not exist")
         return NextResponse.json(
           {
             error: "Database not initialized",
@@ -30,7 +30,7 @@ export async function GET() {
       throw dbError
     }
   } catch (error) {
-    console.error("[v0] Error fetching fuel entries:", error)
+    console.error("Error fetching fuel entries:", error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.json(
       {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ entry: result[0] }, { status: 201 })
   } catch (error) {
-    console.error("[v0] Error creating fuel entry:", error)
+    console.error("Error creating fuel entry:", error)
     return NextResponse.json({ error: "Failed to create fuel entry" }, { status: 500 })
   }
 }

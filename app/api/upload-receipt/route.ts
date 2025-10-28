@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         const region = process.env.AWS_REGION
         const url = `https://${bucketName}.s3.${region}.amazonaws.com/${filename}`
 
-        console.log("[v0] Upload successful:", url)
+        console.log("Upload successful:", url)
 
         return NextResponse.json({
             url,
