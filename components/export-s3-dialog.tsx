@@ -112,7 +112,8 @@ export function ExportS3Dialog() {
                 <li>Consumption metrics</li>
               </ul>
               <p className="mt-3 text-xs">
-                Note: Receipt images are stored separately in Vercel Blob and are not included in the S3 backup.
+                Note: Receipt images are stored in AWS S3 under the receipts/ folder and are not included in this JSON
+                backup.
               </p>
             </div>
           )}

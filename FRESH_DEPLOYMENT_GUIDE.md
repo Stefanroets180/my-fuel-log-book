@@ -29,8 +29,8 @@ This guide walks you through deploying the Fuel Logbook app from scratch when yo
    ├── package.json
    ├── README.md
    ├── NEON_DATABASE_SETUP_INSTRUCTIONS.md
-   ├── VERCEL_BLOB_SETUP_INSTRUCTIONS.md
    ├── AWS_S3_SETUP_INSTRUCTIONS.md
+   ├── AWS_S3_RECEIPT_SETUP.md
    └── ... other files
    \`\`\`
 
@@ -172,22 +172,23 @@ You have two options:
 
 ---
 
-## Part 5: Set Up Vercel Blob
+## Part 5: Set Up AWS S3 for Receipt Storage
 
-### Step 1: Create Blob Store
+### Step 1: Create S3 Bucket and Configure Access
 
-Follow the detailed instructions in **[VERCEL_BLOB_SETUP_INSTRUCTIONS.md](./VERCEL_BLOB_SETUP_INSTRUCTIONS.md)**
+Follow the detailed instructions in **[AWS_S3_RECEIPT_SETUP.md](./AWS_S3_RECEIPT_SETUP.md)**
 
 Quick summary:
 
-1. In your Vercel project, go to **"Storage"** tab
-2. Click **"Create Database"** or **"Connect Store"**
-3. Select **"Blob"**
-4. Name it: `fuel-receipts-blob`
-5. Choose region (same as your Neon database for best performance)
-6. Click **"Create"**
-
-Vercel automatically adds `BLOB_READ_WRITE_TOKEN` to your environment variables ✓
+1. Create an S3 bucket in AWS Console
+2. Configure bucket for public read access (for receipt images)
+3. Create IAM user with S3 permissions
+4. Generate access keys
+5. Add AWS credentials to Vercel environment variables:
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+   - `AWS_REGION`
+   - `AWS_S3_BUCKET_NAME`
 
 ---
 
@@ -213,24 +214,7 @@ Now that integrations are set up:
 
 ---
 
-## Part 7: Set Up AWS S3 (Optional)
-
-If you want to export data to AWS S3, follow **[AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)**
-
-Quick summary:
-1. Create S3 bucket in AWS Console
-2. Create IAM user with S3 access
-3. Generate access keys
-4. Add AWS credentials to Vercel environment variables:
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-   - `AWS_REGION`
-   - `AWS_S3_BUCKET_NAME`
-5. Redeploy your app
-
----
-
-## Part 8: Local Development Setup
+## Part 7: Local Development Setup
 
 ### Step 1: Install Dependencies
 
@@ -264,24 +248,25 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## Part 9: Verification Checklist
+## Part 8: Verification Checklist
 
 Before using the app in production, verify:
 
 - [ ] App is deployed and accessible via Vercel URL
 - [ ] Neon database is connected (check Vercel → Settings → Environment Variables)
 - [ ] Database table `fuel_entries` exists (check Neon SQL Editor)
-- [ ] Vercel Blob is connected (check Vercel → Storage)
+- [ ] AWS S3 bucket is configured with proper permissions
+- [ ] AWS credentials are set in Vercel environment variables
 - [ ] Can add a fuel entry successfully
-- [ ] Can upload a receipt image
+- [ ] Can upload a receipt image (stored in S3)
 - [ ] Can view fuel entries in dashboard
-- [ ] Can delete a fuel entry
+- [ ] Can delete a fuel entry (removes receipt from S3)
 - [ ] Can export logbook (HTML download works)
-- [ ] (Optional) AWS S3 export works if configured
+- [ ] S3 JSON export works
 
 ---
 
-## Part 10: Troubleshooting Common Issues
+## Part 9: Troubleshooting Common Issues
 
 ### Issue: "Database connection failed"
 
@@ -301,10 +286,11 @@ Before using the app in production, verify:
 ### Issue: "Receipt upload failed"
 
 **Solutions:**
-1. Verify Vercel Blob is created (Vercel → Storage)
-2. Check `BLOB_READ_WRITE_TOKEN` exists in environment variables
-3. Redeploy the app
-4. Check file size (must be < 4.5 MB on free tier)
+1. Verify AWS S3 bucket exists and is configured
+2. Check all AWS environment variables are set correctly
+3. Verify bucket permissions allow public read access
+4. Check IAM user has proper S3 permissions
+5. Redeploy the app after adding AWS variables
 
 ### Issue: "Environment variables not found locally"
 
@@ -323,7 +309,7 @@ Before using the app in production, verify:
 
 ---
 
-## Part 11: Updating Your App
+## Part 10: Updating Your App
 
 ### Making Changes
 
@@ -348,22 +334,21 @@ Before using the app in production, verify:
 
 ---
 
-## Part 12: Cost Summary (Free Tier)
+## Part 11: Cost Summary (Free Tier)
 
-Your app runs entirely on free tiers:
+Your app runs on free and low-cost tiers:
 
 | Service | Free Tier | Sufficient For |
 |---------|-----------|----------------|
 | **Vercel** | Unlimited deployments, 100 GB bandwidth | Personal use, small teams |
 | **Neon** | 0.5 GB storage, 191.9 compute hours/month | Thousands of fuel entries |
-| **Vercel Blob** | 1 GB storage, 100 GB bandwidth | Hundreds of receipt images |
-| **AWS S3** | 5 GB storage, 20,000 GET requests (first year) | Optional backup |
+| **AWS S3** | 5 GB storage, 20,000 GET requests (first year) | Hundreds of receipt images |
 
-**Total monthly cost: R0** (on free tiers)
+**Estimated monthly cost after first year: ~R10-50** (depending on S3 usage)
 
 ---
 
-## Part 13: Production Best Practices
+## Part 12: Production Best Practices
 
 ### Security
 
@@ -371,36 +356,38 @@ Your app runs entirely on free tiers:
 - [ ] Use environment variables for all secrets
 - [ ] Keep dependencies updated: `npm update`
 - [ ] Enable Vercel's security headers (automatic)
+- [ ] Review S3 bucket permissions regularly
 
 ### Backups
 
-- [ ] Regularly export data to S3 (if configured)
+- [ ] Regularly export data to S3 (JSON backups)
 - [ ] Download HTML exports periodically
 - [ ] Neon automatically backs up your database
+- [ ] S3 receipts are automatically backed up by AWS
 
 ### Monitoring
 
 - [ ] Check Vercel Analytics for usage
 - [ ] Monitor Neon compute hours (free tier: 191.9 hours/month)
-- [ ] Monitor Blob storage usage (free tier: 1 GB)
+- [ ] Monitor S3 storage usage and costs
 
 ---
 
-## Part 14: Getting Help
+## Part 13: Getting Help
 
 ### Documentation
 
 - **This Project**: See [README.md](./README.md)
 - **Neon Setup**: [NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)
-- **Blob Setup**: [VERCEL_BLOB_SETUP_INSTRUCTIONS.md](./VERCEL_BLOB_SETUP_INSTRUCTIONS.md)
-- **AWS S3 Setup**: [AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)
+- **AWS S3 Receipt Setup**: [AWS_S3_RECEIPT_SETUP.md](./AWS_S3_RECEIPT_SETUP.md)
+- **AWS S3 Export Setup**: [AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)
 
 ### External Resources
 
 - [Vercel Documentation](https://vercel.com/docs)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Neon Documentation](https://neon.tech/docs)
-- [Vercel Blob Documentation](https://vercel.com/docs/storage/vercel-blob)
+- [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
 
 ### Support
 
@@ -425,13 +412,17 @@ git push -u origin main
 # 2. Deploy to Vercel
 # - Import from GitHub at vercel.com
 # - Add Neon integration (auto-adds DATABASE_URL)
-# - Add Vercel Blob (auto-adds BLOB_READ_WRITE_TOKEN)
+# - Add AWS S3 credentials manually
 
 # 3. Create database schema
 # - Go to console.neon.tech → SQL Editor
 # - Run scripts/001_create_fuel_entries_table.sql
 
-# 4. Local development
+# 4. Configure S3 bucket
+# - Create bucket with public read access
+# - Add AWS credentials to Vercel
+
+# 5. Local development
 npm install
 vercel link
 vercel env pull .env.local
@@ -442,11 +433,11 @@ npm run dev
 
 ## Congratulations! 🎉
 
-Your Fuel Logbook app is now deployed and ready to track your vehicle's fuel consumption, calculate km/L, store receipts, and help with SARS tax compliance!
+Your Fuel Logbook app is now deployed and ready to track your vehicle's fuel consumption, calculate km/L, store receipts in S3, and help with SARS tax compliance!
 
 **Next Steps:**
 1. Add your first fuel entry
-2. Upload a receipt
+2. Upload a receipt (stored in AWS S3)
 3. Track your consumption over time
 4. Export data for tax purposes
 

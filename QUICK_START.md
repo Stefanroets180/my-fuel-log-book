@@ -23,8 +23,14 @@ The app needs the `fuel_entries` table to be created in your Neon database.
 
 Make sure these environment variables are set in your Vercel project:
 
-- `NEON_NEON_DATABASE_URL` - Your Neon database connection string
-- `BLOB_READ_WRITE_TOKEN` - Your Vercel Blob storage token
+**Database:**
+- `NEON_DATABASE_URL` - Your Neon database connection string
+
+**AWS S3 (for receipt storage):**
+- `AWS_ACCESS_KEY_ID` - Your AWS access key
+- `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
+- `AWS_REGION` - Your S3 bucket region (e.g., us-east-1)
+- `AWS_S3_BUCKET_NAME` - Your S3 bucket name
 
 ### 3. Test the Connection
 
@@ -36,7 +42,7 @@ After running the migration:
 ## 📝 Adding Your First Entry
 
 1. Fill in the form with your fuel purchase details
-2. Upload a receipt image (optional)
+2. Upload a receipt image (optional) - stored in AWS S3
 3. Check "Work Travel" if applicable for SARS
 4. Click "Add Entry"
 
@@ -55,12 +61,13 @@ The app will automatically calculate:
 - Verify your Neon database is active (not paused)
 
 **Receipt upload fails**
-- Check that BLOB_READ_WRITE_TOKEN is set
-- Verify Vercel Blob is enabled in your project
+- Check that all AWS S3 environment variables are set
+- Verify your S3 bucket exists and has proper permissions
+- See AWS_S3_RECEIPT_SETUP.md for detailed setup instructions
 
 ## 📚 Full Documentation
 
 - [Neon Database Setup](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)
-- [Vercel Blob Setup](./VERCEL_BLOB_SETUP_INSTRUCTIONS.md)
-- [AWS S3 Setup](./AWS_S3_SETUP_INSTRUCTIONS.md)
+- [AWS S3 Receipt Setup](./AWS_S3_RECEIPT_SETUP.md)
+- [AWS S3 Export Setup](./AWS_S3_SETUP_INSTRUCTIONS.md)
 - [Fresh Deployment Guide](./FRESH_DEPLOYMENT_GUIDE.md)

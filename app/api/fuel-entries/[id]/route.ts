@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db"
 import { type NextRequest, NextResponse } from "next/server"
-import { del } from "@vercel/blob"
+import { deleteFromS3 } from "@/lib/s3-client"
 
 // DELETE a fuel entry
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -18,12 +18,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const entry = entries[0]
 
-    // Delete the receipt image from Blob if it exists
     if (entry.receipt_image_url) {
       try {
-        await del(entry.receipt_image_url)
+        await deleteFromS3(entry.receipt_image_url)
       } catch (error) {
-        console.error("Error deleting receipt image:", error)
+        console.error("Error deleting receipt image from S3:", error)
         // Continue with entry deletion even if image deletion fails
       }
     }

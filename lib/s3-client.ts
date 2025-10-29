@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3"
 
 // Create S3 client singleton
 let s3Client: S3Client | null = null
@@ -61,4 +61,30 @@ export async function listS3Objects(prefix?: string) {
 
   const response = await client.send(command)
   return response.Contents || []
+}
+
+export async function deleteFromS3(url: string) {
+  const client = getS3Client()
+  const bucketName = getBucketName()
+  const region = process.env.AWS_REGION
+
+  // Extract the key from the S3 URL
+  // URL format: https://bucket-name.s3.region.amazonaws.com/key
+  const urlPattern = new RegExp(`https://${bucketName}\\.s3\\.${region}\\.amazonaws\\.com/(.+)`)
+  const match = url.match(urlPattern)
+
+  if (!match) {
+    throw new Error("Invalid S3 URL format")
+  }
+
+  const key = decodeURIComponent(match[1])
+
+  const command = new DeleteObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+  })
+
+  await client.send(command)
+
+  return { bucket: bucketName, key, deleted: true }
 }
