@@ -29,6 +29,7 @@ export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
     const [deletingId, setDeletingId] = useState<number | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [setupRequired, setSetupRequired] = useState(false)
+    const [signedUrls, setSignedUrls] = useState<Record<number, string>>({})
 
     const fetchEntries = async () => {
         try {
@@ -56,6 +57,32 @@ export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
             setEntries(data.entries)
             setError(null)
             setSetupRequired(false)
+
+            const urlsToGenerate = data.entries.filter((entry: FuelEntry) => entry.receipt_image_url)
+            if (urlsToGenerate.length > 0) {
+                console.log("[v0] Generating signed URLs for", urlsToGenerate.length, "receipts")
+                const newSignedUrls: Record<number, string> = {}
+
+                for (const entry of urlsToGenerate) {
+                    try {
+                        const response = await fetch("/api/signed-url", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ url: entry.receipt_image_url }),
+                        })
+
+                        if (response.ok) {
+                            const { signedUrl } = await response.json()
+                            newSignedUrls[entry.id] = signedUrl
+                        }
+                    } catch (error) {
+                        console.error("[v0] Failed to generate signed URL for entry", entry.id, error)
+                    }
+                }
+
+                setSignedUrls(newSignedUrls)
+                console.log("[v0] Generated", Object.keys(newSignedUrls).length, "signed URLs")
+            }
         } catch (error) {
             console.error("Error fetching entries:", error)
             setError(error instanceof Error ? error.message : "Failed to fetch entries")
@@ -78,6 +105,11 @@ export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
             if (!response.ok) throw new Error("Failed to delete entry")
 
             setEntries((prev) => prev.filter((entry) => entry.id !== id))
+            setSignedUrls((prev) => {
+                const newUrls = { ...prev }
+                delete newUrls[id]
+                return newUrls
+            })
         } catch (error) {
             console.error("Error deleting entry:", error)
             alert("Failed to delete entry. Please try again.")
@@ -285,11 +317,11 @@ export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
                                                 </p>
                                             )}
 
-                                            {entry.receipt_image_url && (
+                                            {entry.receipt_image_url && signedUrls[entry.id] && (
                                                 <div className="flex items-center gap-2">
                                                     <ImageIcon className="h-4 w-4 text-muted-foreground" />
                                                     <a
-                                                        href={entry.receipt_image_url}
+                                                        href={signedUrls[entry.id]}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-sm text-primary hover:underline flex items-center gap-1"

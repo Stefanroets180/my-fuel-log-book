@@ -6,7 +6,7 @@ This guide will walk you through setting up AWS S3 for storing fuel receipt imag
 
 - **What**: Store receipt images in AWS S3
 - **Format**: JPEG/PNG uploads are automatically converted to AVIF (80% smaller files)
-- **Security**: Private bucket with IAM user access only
+- **Security**: Private bucket with signed URLs for secure access
 - **Cost**: ~$0.023 per GB/month in Cape Town region (af-south-1)
 
 ---
@@ -36,6 +36,7 @@ This guide will walk you through setting up AWS S3 for storing fuel receipt imag
 4. **Block Public Access settings:**
     - ✅ Keep ALL checkboxes CHECKED
     - This keeps your receipts private (important for security)
+    - **Note**: The app uses signed URLs for secure access, so public access is NOT needed
 
 5. **Bucket Versioning:**
     - Select **"Disable"** (you don't need version history for receipts)
@@ -220,6 +221,40 @@ Add these **4 environment variables**:
 4. You should see your uploaded file with `.avif` extension
 5. Click on the file to view details
 
+### 5.3 View Receipt in App
+
+1. Go to your fuel log dashboard
+2. Find the entry with the receipt
+3. Click **"View Receipt"** link
+4. The receipt should open in a new tab using a secure signed URL
+
+---
+
+## Understanding Signed URLs (Security Feature)
+
+### What Are Signed URLs?
+
+Signed URLs are temporary, secure links that allow access to private S3 objects without making your bucket public.
+
+### How It Works
+
+1. **Upload**: Receipt is stored in your private S3 bucket
+2. **Storage**: The S3 URL is saved in the database
+3. **Viewing**: When you click "View Receipt", the app generates a signed URL
+4. **Access**: The signed URL grants temporary access (1 hour) to view the receipt
+5. **Expiration**: After 1 hour, the URL expires and cannot be used
+
+### Benefits
+
+- ✅ **Security**: Your S3 bucket remains completely private
+- ✅ **No public access**: Receipts cannot be accessed without authorization
+- ✅ **Temporary access**: URLs expire automatically
+- ✅ **Controlled access**: Only your app can generate signed URLs
+
+### Why Not Make Bucket Public?
+
+Making your bucket public would allow anyone with the URL to view your receipts. Signed URLs ensure only authorized users can access receipts through your app.
+
 ---
 
 ## Understanding AVIF Conversion
@@ -269,6 +304,8 @@ For 1 year (600 receipts, 300 MB): ~$0.12/month
 - ✅ IAM user with minimal permissions (only receipts folder)
 - ✅ Server-side encryption (SSE-S3)
 - ✅ Secure credential storage (Vercel environment variables)
+- ✅ Signed URLs for temporary, secure access
+- ✅ Automatic URL expiration (1 hour)
 
 ### � Additional Recommendations
 
@@ -281,14 +318,26 @@ For 1 year (600 receipts, 300 MB): ~$0.12/month
 
 ## Troubleshooting
 
-### Error: "Access Denied"
+### Error: "Access Denied" when viewing receipts
+
+**Cause**: This was the original issue - bucket was private but app wasn't using signed URLs
+
+**Solution**: ✅ **FIXED** - The app now uses signed URLs automatically
+
+If you still see this error:
+1. Verify the IAM policy includes `s3:GetObject` permission
+2. Check that environment variables are set correctly in Vercel
+3. Ensure the IAM user has the custom policy attached
+4. Redeploy your Vercel app
+
+### Error: "Access Denied" when uploading
 
 **Cause**: IAM policy or credentials issue
 
 **Solution**:
 1. Verify the bucket name in your policy matches exactly
 2. Check that environment variables are set correctly in Vercel
-3. Ensure the IAM user has the custom policy attached
+3. Ensure the IAM user has the custom policy attached with `s3:PutObject`
 4. Redeploy your Vercel app after adding variables
 
 ### Error: "Bucket not found"
@@ -311,40 +360,30 @@ For 1 year (600 receipts, 300 MB): ~$0.12/month
 4. Update environment variables in Vercel
 5. Redeploy
 
-### Upload succeeds but image doesn't display
+### Signed URL expires too quickly
 
-**Cause**: CORS or bucket policy issue
+**Cause**: Default expiration is 1 hour
 
-**Solution**:
-1. Go to S3 → Your bucket → Permissions → CORS
-2. Add this CORS configuration:
-
-\`\`\`json
-[
-{
-"AllowedHeaders": ["*"],
-"AllowedMethods": ["GET", "HEAD"],
-"AllowedOrigins": ["https://your-app.vercel.app"],
-"ExposeHeaders": []
-}
-]
+**Solution**: If you need longer access, you can modify the expiration time in `lib/s3-client.ts`:
+\`\`\`typescript
+// Change from 3600 (1 hour) to 7200 (2 hours) or longer
+const signedUrl = await getSignedUrlForObject(key, 7200)
 \`\`\`
-
-3. Replace `your-app.vercel.app` with your actual domain
 
 ---
 
 ## Next Steps
 
-✅ Your receipt upload system is now configured!
+✅ Your receipt upload system is now configured with secure signed URLs!
 
 **What you can do:**
 - Upload receipt images when adding fuel entries
 - Images are automatically converted to AVIF
 - Receipts are securely stored in your private S3 bucket
-- View receipts in the fuel log dashboard
+- View receipts using temporary signed URLs (no public access needed)
 
 **Optional enhancements:**
 - Set up S3 lifecycle rules to archive old receipts
 - Enable S3 versioning for receipt history
 - Configure CloudFront CDN for faster image delivery
+- Adjust signed URL expiration time based on your needs
