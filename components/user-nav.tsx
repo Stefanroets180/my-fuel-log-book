@@ -1,5 +1,3 @@
-/* UNCOMMENT WHEN SUPABASE IS INSTALLED
-
 'use client'
 
 import { User } from 'lucide-react'
@@ -55,9 +53,10 @@ export function UserNav({ user }: UserNavProps) {
   )
 }
 
-*/
 
+/*
 // Placeholder component when Supabase is not installed
 export function UserNav() {
   return null
 }
+*/

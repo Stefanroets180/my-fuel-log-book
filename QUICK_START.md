@@ -6,17 +6,17 @@ If you're seeing a database error, follow these steps:
 
 ### 1. Run the Database Migration
 
-The app needs the `fuel_entries` table to be created in your Neon database. 
+The app needs the `fuel_entries` table to be created in your Supabase database. 
 
 **In v0 (if you haven't deployed yet):**
 - The SQL script at `scripts/001_create_fuel_entries_table.sql` will run automatically when you execute it
 - Click the "Run" button next to the script file in v0
 
 **After deploying to Vercel:**
-1. Go to your Neon dashboard: https://console.neon.tech
+1. Go to your Supabase dashboard: https://supabase.com/dashboard
 2. Select your project
 3. Click on "SQL Editor" in the left sidebar
-4. Copy the contents of `scripts/001_create_fuel_entries_table.sql`
+4. Copy the contents of `supabase-fresh-schema.sql`
 5. Paste into the SQL Editor and click "Run"
 
 ### 2. Verify Environment Variables
@@ -24,7 +24,9 @@ The app needs the `fuel_entries` table to be created in your Neon database.
 Make sure these environment variables are set in your Vercel project:
 
 **Database:**
-- `NEON_DATABASE_URL` - Your Neon database connection string
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key
 
 **AWS S3 (for receipt storage):**
 - `AWS_ACCESS_KEY_ID` - Your AWS access key
@@ -57,8 +59,8 @@ The app will automatically calculate:
 - Run the database migration script (see step 1 above)
 
 **"Failed to fetch entries"**
-- Check that NEON_DATABASE_URL is set correctly
-- Verify your Neon database is active (not paused)
+- Check that Supabase environment variables are set correctly
+- Verify your Supabase project is active
 
 **Receipt upload fails**
 - Check that all AWS S3 environment variables are set
@@ -67,7 +69,8 @@ The app will automatically calculate:
 
 ## 📚 Full Documentation
 
-- [Neon Database Setup](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)
+- [Supabase Fresh Setup](./SUPABASE_FRESH_SETUP.md)
+- [Supabase Authentication Setup](./SUPABASE_AUTHENTICATION_SETUP.md)
 - [AWS S3 Receipt Setup](./AWS_S3_RECEIPT_SETUP.md)
 - [AWS S3 Export Setup](./AWS_S3_SETUP_INSTRUCTIONS.md)
 - [Fresh Deployment Guide](./FRESH_DEPLOYMENT_GUIDE.md)

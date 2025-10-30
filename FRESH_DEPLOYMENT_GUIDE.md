@@ -28,7 +28,7 @@ This guide walks you through deploying the Fuel Logbook app from scratch when yo
    ├── public/
    ├── package.json
    ├── README.md
-   ├── NEON_DATABASE_SETUP_INSTRUCTIONS.md
+   ├── SUPABASE_FRESH_SETUP.md
    ├── AWS_S3_SETUP_INSTRUCTIONS.md
    ├── AWS_S3_RECEIPT_SETUP.md
    └── ... other files
@@ -117,35 +117,36 @@ Vercel will show the import configuration screen:
 
 ---
 
-## Part 4: Set Up Neon Database
+## Part 4: Set Up Supabase Database
 
-### Step 1: Create Neon Account and Database
+### Step 1: Create Supabase Account and Project
 
-Follow the detailed instructions in **[NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)**
+Follow the detailed instructions in **[SUPABASE_FRESH_SETUP.md](./SUPABASE_FRESH_SETUP.md)**
 
 Quick summary:
-1. Go to [neon.tech](https://neon.tech) and sign up
+1. Go to [supabase.com](https://supabase.com) and sign up
 2. Create a new project: `fuel-logbook-db`
 3. Choose region: **Europe (Frankfurt)** or **Europe (London)** for South Africa
-4. Copy your connection strings
+4. Copy your project URL and API keys
 
-### Step 2: Connect Neon to Vercel
+### Step 2: Connect Supabase to Vercel
 
 **Option A: Automatic Integration (Recommended)**
 
 1. In your Vercel project configuration screen, scroll down
 2. Look for **"Add Integration"** or go to project **Settings** → **Integrations**
-3. Search for **"Neon"**
+3. Search for **"Supabase"**
 4. Click **"Add Integration"**
-5. Authorize and select your Neon project
+5. Authorize and select your Supabase project
 6. Vercel will automatically add all database environment variables ✓
 
 **Option B: Manual Setup**
 
 1. In Vercel project settings, go to **Environment Variables**
 2. Add these variables:
-   - `NEON_DATABASE_URL` = Your Neon pooled connection string
-   - `DATABASE_URL_UNPOOLED` = Your Neon direct connection string
+   - `NEXT_PUBLIC_SUPABASE_URL` = Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = Your Supabase anonymous key
+   - `SUPABASE_SERVICE_ROLE_KEY` = Your Supabase service role key
 3. Select all environments (Production, Preview, Development)
 4. Click **"Save"**
 
@@ -153,22 +154,22 @@ Quick summary:
 
 You have two options:
 
-**Option A: Using Neon SQL Editor (Easiest)**
+**Option A: Using Supabase SQL Editor (Easiest)**
 
-1. Go to [console.neon.tech](https://console.neon.tech)
+1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
 2. Select your project
 3. Click **"SQL Editor"**
-4. Open the file `scripts/001_create_fuel_entries_table.sql` from your downloaded project
+4. Open the file `supabase-fresh-schema.sql` from your downloaded project
 5. Copy the entire SQL content
-6. Paste into Neon SQL Editor
+6. Paste into Supabase SQL Editor
 7. Click **"Run"** (or press Ctrl+Enter)
-8. You should see: `CREATE TABLE` success message ✓
+8. You should see: `Success. No rows returned` message ✓
 
 **Option B: After First Deployment**
 
 1. Deploy the app first (see Part 5)
 2. The app can run migrations automatically
-3. Or use the Vercel CLI to run scripts (see NEON_DATABASE_SETUP_INSTRUCTIONS.md)
+3. Or use the Vercel CLI to run scripts
 
 ---
 
@@ -253,8 +254,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 Before using the app in production, verify:
 
 - [ ] App is deployed and accessible via Vercel URL
-- [ ] Neon database is connected (check Vercel → Settings → Environment Variables)
-- [ ] Database table `fuel_entries` exists (check Neon SQL Editor)
+- [ ] Supabase database is connected (check Vercel → Settings → Environment Variables)
+- [ ] Database tables exist (check Supabase SQL Editor)
 - [ ] AWS S3 bucket is configured with proper permissions
 - [ ] AWS credentials are set in Vercel environment variables
 - [ ] Can add a fuel entry successfully
@@ -272,16 +273,16 @@ Before using the app in production, verify:
 
 **Solutions:**
 1. Check Vercel → Settings → Environment Variables
-2. Verify `DATABASE_URL` is set correctly
-3. Test connection in Neon Console
+2. Verify Supabase environment variables are set correctly
+3. Test connection in Supabase Dashboard
 4. Redeploy the app after adding variables
 
 ### Issue: "Table does not exist"
 
 **Solutions:**
-1. Run the SQL migration script in Neon SQL Editor
-2. Copy content from `scripts/001_create_fuel_entries_table.sql`
-3. Paste and run in Neon Console → SQL Editor
+1. Run the SQL migration script in Supabase SQL Editor
+2. Copy content from `supabase-fresh-schema.sql`
+3. Paste and run in Supabase Dashboard → SQL Editor
 
 ### Issue: "Receipt upload failed"
 
@@ -341,10 +342,23 @@ Your app runs on free and low-cost tiers:
 | Service | Free Tier | Sufficient For |
 |---------|-----------|----------------|
 | **Vercel** | Unlimited deployments, 100 GB bandwidth | Personal use, small teams |
-| **Neon** | 0.5 GB storage, 191.9 compute hours/month | Thousands of fuel entries |
+| **Supabase** | 500 MB database, 2 GB bandwidth, 50 MB file storage | Thousands of fuel entries |
 | **AWS S3** | 5 GB storage, 20,000 GET requests (first year) | Hundreds of receipt images |
 
 **Estimated monthly cost after first year: ~R10-50** (depending on S3 usage)
+
+### Backups
+
+- [ ] Regularly export data to S3 (JSON backups)
+- [ ] Download HTML exports periodically
+- [ ] Supabase automatically backs up your database
+- [ ] S3 receipts are automatically backed up by AWS
+
+### Monitoring
+
+- [ ] Check Vercel Analytics for usage
+- [ ] Monitor Supabase database usage (free tier: 500 MB)
+- [ ] Monitor S3 storage usage and costs
 
 ---
 
@@ -362,13 +376,13 @@ Your app runs on free and low-cost tiers:
 
 - [ ] Regularly export data to S3 (JSON backups)
 - [ ] Download HTML exports periodically
-- [ ] Neon automatically backs up your database
+- [ ] Supabase automatically backs up your database
 - [ ] S3 receipts are automatically backed up by AWS
 
 ### Monitoring
 
 - [ ] Check Vercel Analytics for usage
-- [ ] Monitor Neon compute hours (free tier: 191.9 hours/month)
+- [ ] Monitor Supabase database usage (free tier: 500 MB)
 - [ ] Monitor S3 storage usage and costs
 
 ---
@@ -378,7 +392,7 @@ Your app runs on free and low-cost tiers:
 ### Documentation
 
 - **This Project**: See [README.md](./README.md)
-- **Neon Setup**: [NEON_DATABASE_SETUP_INSTRUCTIONS.md](./NEON_DATABASE_SETUP_INSTRUCTIONS.md)
+- **Supabase Setup**: [SUPABASE_FRESH_SETUP.md](./SUPABASE_FRESH_SETUP.md)
 - **AWS S3 Receipt Setup**: [AWS_S3_RECEIPT_SETUP.md](./AWS_S3_RECEIPT_SETUP.md)
 - **AWS S3 Export Setup**: [AWS_S3_SETUP_INSTRUCTIONS.md](./AWS_S3_SETUP_INSTRUCTIONS.md)
 
@@ -386,13 +400,13 @@ Your app runs on free and low-cost tiers:
 
 - [Vercel Documentation](https://vercel.com/docs)
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Neon Documentation](https://neon.tech/docs)
+- [Supabase Documentation](https://supabase.com/docs)
 - [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
 
 ### Support
 
 - **Vercel**: [vercel.com/help](https://vercel.com/help)
-- **Neon**: [Discord Community](https://discord.gg/neon)
+- **Supabase**: [Discord Community](https://discord.com/invite/supabase)
 - **GitHub Issues**: Create an issue in your repository
 
 ---
@@ -411,15 +425,15 @@ git push -u origin main
 
 # 2. Deploy to Vercel
 # - Import from GitHub at vercel.com
-# - Add Neon integration (auto-adds DATABASE_URL)
+# - Add Supabase integration (auto-adds environment variables)
 # - Add AWS S3 credentials manually
 
 # 3. Create database schema
-# - Go to console.neon.tech → SQL Editor
-# - Run scripts/001_create_fuel_entries_table.sql
+# - Go to supabase.com/dashboard → SQL Editor
+# - Run supabase-fresh-schema.sql
 
 # 4. Configure S3 bucket
-# - Create bucket with public read access
+# - Create bucket with proper permissions
 # - Add AWS credentials to Vercel
 
 # 5. Local development

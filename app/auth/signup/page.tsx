@@ -1,5 +1,3 @@
-/* UNCOMMENT WHEN SUPABASE IS INSTALLED
-
 import { SignupForm } from '@/components/auth/signup-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
@@ -28,8 +26,8 @@ export default function SignupPage() {
   )
 }
 
-*/
 
+/*
 // Placeholder page when Supabase is not installed
 export default function SignupPage() {
   return (
@@ -43,3 +41,4 @@ export default function SignupPage() {
     </div>
   )
 }
+*/

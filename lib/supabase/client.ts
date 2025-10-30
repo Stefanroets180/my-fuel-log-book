@@ -1,5 +1,3 @@
-/* UNCOMMENT WHEN SUPABASE IS INSTALLED
-
 import { createBrowserClient } from '@supabase/ssr'
 
 // Singleton pattern to prevent multiple client instances
@@ -20,9 +18,10 @@ export function createClient() {
   return client
 }
 
-*/
 
+/*
 // Placeholder export when Supabase is not installed
 export function createClient() {
   throw new Error("Supabase is not configured. Please follow SUPABASE_AUTHENTICATION_SETUP.md")
 }
+*/

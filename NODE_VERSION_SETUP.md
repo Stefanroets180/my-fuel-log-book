@@ -1,12 +1,13 @@
 # Node.js Version Configuration Guide
 
-This project requires **Node.js 22.14.0 or higher** for optimal Neon database connectivity through Vercel.
+This project requires **Node.js 22.14.0 or higher** for optimal performance and compatibility.
 
 ## Why Node.js 22.14.0?
 
-- **Neon Serverless Driver**: Requires Node.js 20.9+ for WebSocket support
+- **Modern Features**: Support for latest JavaScript features
 - **Performance**: Node.js 22.x offers improved performance and stability
 - **Vercel Compatibility**: Full support for latest Node.js features on Vercel platform
+- **Supabase SDK**: Ensures compatibility with latest Supabase client libraries
 - **Future-proof**: Ensures compatibility with latest database drivers and features
 
 ---
@@ -139,7 +140,7 @@ The `vercel.json` configuration automatically sets the Node.js runtime for Verce
    - Click **Save**
 
 3. **Environment Variables**:
-   - Ensure all Neon environment variables are set (see NEON_DATABASE_SETUP_INSTRUCTIONS.md)
+   - Ensure all Supabase environment variables are set (see SUPABASE_DATABASE_SETUP_INSTRUCTIONS.md)
    - Vercel will use Node.js 22.x for all API routes and functions
 
 ---
@@ -160,7 +161,7 @@ npm --version
 # Install dependencies
 npm install
 
-# Test Neon connection
+# Test Supabase connection
 npm run dev
 \`\`\`
 
@@ -183,8 +184,8 @@ After deploying to Vercel:
    - Try adding a fuel entry
    - Check **Function Logs** in Vercel dashboard for any errors
 
-3. **Verify Neon Connection**:
-   - In Vercel dashboard: **Storage** → **Neon**
+3. **Verify Supabase Connection**:
+   - In Vercel dashboard: **Storage** → **Supabase**
    - Should show "Connected" status
    - Test database queries through your app
 
@@ -207,11 +208,11 @@ nvm use 22.14.0
 npm install
 \`\`\`
 
-### Issue: "Neon connection fails locally"
+### Issue: "Supabase connection fails locally"
 
 **Symptoms:**
 - `fetch failed` errors
-- `WebSocket connection failed`
+- Connection timeout errors
 
 **Solution:**
 1. Verify Node.js version:
@@ -220,10 +221,12 @@ npm install
    # Must be 22.14.0 or higher
    \`\`\`
 
-2. Check Neon environment variables:
+2. Check Supabase environment variables:
    \`\`\`bash
    # In your .env.local file
-   NEON_NEON_DATABASE_URL=postgresql://...
+   NEXT_PUBLIC_SUPABASE_URL=https://...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   SUPABASE_SERVICE_ROLE_KEY=...
    \`\`\`
 
 3. Restart development server:
@@ -335,7 +338,7 @@ deploy:
 ## Additional Resources
 
 - **Node.js 22 Release Notes**: https://nodejs.org/en/blog/release/v22.14.0
-- **Neon Serverless Driver Docs**: https://neon.tech/docs/serverless/serverless-driver
+- **Supabase Documentation**: https://supabase.com/docs
 - **Vercel Node.js Runtime**: https://vercel.com/docs/functions/runtimes/node-js
 - **NVM Documentation**: https://github.com/nvm-sh/nvm
 
@@ -346,6 +349,6 @@ deploy:
 ✅ **Local Development**: Use `.nvmrc` with NVM or install Node.js 22.14.0 directly  
 ✅ **Vercel Deployment**: `vercel.json` automatically configures Node.js 22.x runtime  
 ✅ **Package Management**: `package.json` engines field documents version requirement  
-✅ **Neon Compatibility**: Node.js 22.14.0 ensures full WebSocket and serverless driver support
+✅ **Supabase Compatibility**: Node.js 22.14.0 ensures full compatibility with Supabase SDK
 
-Your fuel logbook app is now configured to use Node.js 22.14.0 for optimal Neon database connectivity!
+Your fuel logbook app is now configured to use Node.js 22.14.0 for optimal performance!

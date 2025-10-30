@@ -1,5 +1,3 @@
-/* UNCOMMENT WHEN SUPABASE IS INSTALLED
-
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -76,7 +74,7 @@ export async function updateSession(request: NextRequest) {
   return supabaseResponse
 }
 
-*/
+/*
 
 // Placeholder export when Supabase is not installed
 import { NextResponse, type NextRequest } from "next/server"
@@ -86,3 +84,4 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 }
+*/

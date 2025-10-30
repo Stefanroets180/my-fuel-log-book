@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch all fuel entries
-    const entries = await sql`
+    // @ts-ignore
+      const entries = await sql`
       SELECT * FROM fuel_entries 
       ORDER BY date DESC, created_at DESC
     `

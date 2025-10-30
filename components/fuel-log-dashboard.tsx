@@ -49,7 +49,7 @@ export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
         } else {
           const errorText = await response.text()
           console.error("Non-JSON error response:", errorText)
-          throw new Error("Server error: Unable to connect to database. Please check your Neon configuration.")
+          throw new Error("Server error: Unable to connect to database. Please check your Supabase configuration.")
         }
       }
 
@@ -209,12 +209,12 @@ export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
               <li>
                 Go to your{" "}
                 <a
-                  href="https://console.neon.tech"
+                  href="https://supabase.com/dashboard"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  Neon Console
+                  Supabase Dashboard
                 </a>
               </li>
               <li>Select your project and navigate to the SQL Editor</li>
@@ -227,8 +227,9 @@ export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
           <div className="space-y-2 rounded-lg bg-muted p-4">
             <p className="text-sm font-semibold">Environment Variables Check:</p>
             <p className="text-xs text-muted-foreground">
-              Make sure <code className="bg-background px-1.5 py-0.5 rounded">NEON_NEON_DATABASE_URL</code> is set in
-              your Vercel project settings or local .env file.
+              Make sure <code className="bg-background px-1.5 py-0.5 rounded">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+              <code className="bg-background px-1.5 py-0.5 rounded">SUPABASE_SERVICE_ROLE_KEY</code> are set in your
+              Vercel project settings or local .env file.
             </p>
           </div>
 

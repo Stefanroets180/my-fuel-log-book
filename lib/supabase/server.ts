@@ -1,5 +1,3 @@
-/* UNCOMMENT WHEN SUPABASE IS INSTALLED
-
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -30,9 +28,10 @@ export async function createClient() {
   )
 }
 
-*/
 
+/*
 // Placeholder export when Supabase is not installed
 export async function createClient() {
   throw new Error("Supabase is not configured. Please follow SUPABASE_AUTHENTICATION_SETUP.md")
 }
+*/

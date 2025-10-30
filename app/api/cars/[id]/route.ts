@@ -1,6 +1,4 @@
-/* UNCOMMENT WHEN SUPABASE IS INSTALLED
-
-import { createClient } from '@/lib/supabase/server'
+/*import { createClient } from '@/lib/supabase/server'
 import { sql } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
@@ -18,7 +16,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const result = await sql`
+    
+      const result = await sql`
       SELECT * FROM cars 
       WHERE id = ${id} AND user_id = ${user.id}
     `
@@ -146,9 +145,8 @@ export async function DELETE(
     console.error('Error deleting car:', error)
     return NextResponse.json({ error: 'Failed to delete car' }, { status: 500 })
   }
-}
+}*/
 
-*/
 
 // Placeholder API when Supabase is not installed
 import { NextResponse } from "next/server"

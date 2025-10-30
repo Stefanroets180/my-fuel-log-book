@@ -105,10 +105,10 @@ See `COMPLETE_DEPLOYMENT_GUIDE.md` for detailed deployment instructions.
 
 - **`COMPLETE_DEPLOYMENT_GUIDE.md`** - Master deployment guide
 - **`SUPABASE_AUTHENTICATION_SETUP.md`** - Supabase setup instructions
+- **`SUPABASE_FRESH_SETUP.md`** - Fresh Supabase database setup
 - **`AWS_S3_RECEIPT_SETUP.md`** - S3 configuration guide
 - **`DATABASE_MIGRATION_GUIDE.md`** - Database migration instructions
 - **`CAR_MANAGEMENT_GUIDE.md`** - Car management feature guide
-- **`NEON_TO_SUPABASE_MIGRATION.md`** - Migrating from Neon to Supabase
 - **`INSTALL_SUPABASE_PACKAGES.md`** - Package installation guide
 
 ## Project Structure

@@ -1,5 +1,3 @@
-/* UNCOMMENT WHEN SUPABASE IS INSTALLED
-
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
@@ -28,8 +26,8 @@ export async function GET(request: Request) {
   return NextResponse.redirect(`${origin}/auth/auth-code-error`)
 }
 
-*/
 
+/*
 // Placeholder route when Supabase is not installed
 import { NextResponse } from "next/server"
 
@@ -37,3 +35,4 @@ export async function GET(request: Request) {
   const { origin } = new URL(request.url)
   return NextResponse.redirect(`${origin}/`)
 }
+*/

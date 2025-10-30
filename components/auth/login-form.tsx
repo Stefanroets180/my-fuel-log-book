@@ -1,5 +1,3 @@
-/* UNCOMMENT WHEN SUPABASE IS INSTALLED
-
 'use client'
 
 import { useState } from 'react'
@@ -94,9 +92,10 @@ export function LoginForm() {
   )
 }
 
-*/
 
+/*
 // Placeholder component when Supabase is not installed
 export function LoginForm() {
   return <div className="text-center text-muted-foreground">Authentication not configured</div>
 }
+*/
