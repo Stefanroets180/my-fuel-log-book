@@ -17,41 +17,41 @@ This app uses **signed URLs** to securely access private S3 objects. This means:
 ## Step 1: Create an S3 Bucket
 
 1. **Log in to AWS Console**
-    - Go to https://console.aws.amazon.com/
-    - Sign in with your AWS account credentials
+   - Go to https://console.aws.amazon.com/
+   - Sign in with your AWS account credentials
 
 2. **Navigate to S3**
-    - In the search bar at the top, type "S3"
-    - Click on "S3" from the results
+   - In the search bar at the top, type "S3"
+   - Click on "S3" from the results
 
 3. **Create a New Bucket**
-    - Click the orange "Create bucket" button
-    - **Bucket name**: Enter a unique name (e.g., `fuel-logbook-receipts-yourname`)
-        - Must be globally unique across all AWS accounts
-        - Use lowercase letters, numbers, and hyphens only
-    - **AWS Region**: Choose your preferred region (e.g., `af-south-1` for Cape Town)
-    - **Object Ownership**: Keep "ACLs disabled (recommended)"
-    - **Block Public Access**: Keep all checkboxes CHECKED (block all public access)
-        - ✅ This is correct - the app uses signed URLs, not public access
-    - **Bucket Versioning**: Disable (optional, can enable if you want version history)
-    - **Default encryption**: Enable with "Server-side encryption with Amazon S3 managed keys (SSE-S3)"
-    - Click "Create bucket" at the bottom
+   - Click the orange "Create bucket" button
+   - **Bucket name**: Enter a unique name (e.g., `fuel-logbook-receipts-yourname`)
+     - Must be globally unique across all AWS accounts
+     - Use lowercase letters, numbers, and hyphens only
+   - **AWS Region**: Choose your preferred region (e.g., `af-south-1` for Cape Town)
+   - **Object Ownership**: Keep "ACLs disabled (recommended)"
+   - **Block Public Access**: Keep all checkboxes CHECKED (block all public access)
+     - ✅ This is correct - the app uses signed URLs, not public access
+   - **Bucket Versioning**: Disable (optional, can enable if you want version history)
+   - **Default encryption**: Enable with "Server-side encryption with Amazon S3 managed keys (SSE-S3)"
+   - Click "Create bucket" at the bottom
 
 ## Step 2: Create an IAM User for Programmatic Access
 
 1. **Navigate to IAM**
-    - In the AWS Console search bar, type "IAM"
-    - Click on "IAM" (Identity and Access Management)
+   - In the AWS Console search bar, type "IAM"
+   - Click on "IAM" (Identity and Access Management)
 
 2. **Create a New User**
-    - In the left sidebar, click "Users"
-    - Click the "Create user" button
-    - **User name**: Enter `fuel-logbook-s3-user`
-    - Click "Next"
+   - In the left sidebar, click "Users"
+   - Click the "Create user" button
+   - **User name**: Enter `fuel-logbook-s3-user`
+   - Click "Next"
 
 3. **Set Permissions**
-    - Select "Attach policies directly"
-    - Click "Create policy" (opens in new tab)
+   - Select "Attach policies directly"
+   - Click "Create policy" (opens in new tab)
 
 ### Create Custom Policy (Recommended for Security)
 
@@ -63,30 +63,30 @@ In the new tab:
 
 \`\`\`json
 {
-"Version": "2012-10-17",
-"Statement": [
-{
-"Sid": "ReceiptManagement",
-"Effect": "Allow",
-"Action": [
-"s3:PutObject",
-"s3:GetObject",
-"s3:DeleteObject"
-],
-"Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/receipts/*"
-},
-{
-"Sid": "ListBucket",
-"Effect": "Allow",
-"Action": "s3:ListBucket",
-"Resource": "arn:aws:s3:::YOUR-BUCKET-NAME",
-"Condition": {
-"StringLike": {
-"s3:prefix": "receipts/*"
-}
-}
-}
-]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReceiptManagement",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/receipts/*"
+    },
+    {
+      "Sid": "ListBucket",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": "receipts/*"
+        }
+      }
+    }
+  ]
 }
 \`\`\`
 
@@ -111,65 +111,65 @@ In the new tab:
 ## Step 3: Create Access Keys
 
 1. **Access the User**
-    - Click on the newly created user `fuel-logbook-s3-user`
+   - Click on the newly created user `fuel-logbook-s3-user`
 
 2. **Create Access Key**
-    - Click on the "Security credentials" tab
-    - Scroll down to "Access keys" section
-    - Click "Create access key"
-    - Select "Application running outside AWS"
-    - Check the confirmation checkbox
-    - Click "Next"
-    - (Optional) Add a description tag: "Fuel Logbook App"
-    - Click "Create access key"
+   - Click on the "Security credentials" tab
+   - Scroll down to "Access keys" section
+   - Click "Create access key"
+   - Select "Application running outside AWS"
+   - Check the confirmation checkbox
+   - Click "Next"
+   - (Optional) Add a description tag: "Fuel Logbook App"
+   - Click "Create access key"
 
 3. **Save Your Credentials**
-    - **IMPORTANT**: Copy both values immediately:
-        - **Access key ID**: (looks like `AKIAIOSFODNN7EXAMPLE`)
-        - **Secret access key**: (looks like `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`)
-    - Click "Download .csv file" to save them securely
-    - **WARNING**: You cannot retrieve the secret access key again after closing this dialog!
-    - Click "Done"
+   - **IMPORTANT**: Copy both values immediately:
+     - **Access key ID**: (looks like `AKIAIOSFODNN7EXAMPLE`)
+     - **Secret access key**: (looks like `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`)
+   - Click "Download .csv file" to save them securely
+   - **WARNING**: You cannot retrieve the secret access key again after closing this dialog!
+   - Click "Done"
 
 ## Step 4: Add Environment Variables to Vercel
 
 1. **Go to Your Vercel Project**
-    - Open https://vercel.com/
-    - Navigate to your Fuel Logbook project
-    - Click on "Settings" tab
-    - Click on "Environment Variables" in the left sidebar
+   - Open https://vercel.com/
+   - Navigate to your Fuel Logbook project
+   - Click on "Settings" tab
+   - Click on "Environment Variables" in the left sidebar
 
 2. **Add the Following Variables**:
 
    **Variable 1:**
-    - Name: `AWS_ACCESS_KEY_ID`
-    - Value: [Paste your Access key ID from Step 3]
-    - Environment: Select all (Production, Preview, Development)
-    - Click "Save"
+   - Name: `AWS_ACCESS_KEY_ID`
+   - Value: [Paste your Access key ID from Step 3]
+   - Environment: Select all (Production, Preview, Development)
+   - Click "Save"
 
    **Variable 2:**
-    - Name: `AWS_SECRET_ACCESS_KEY`
-    - Value: [Paste your Secret access key from Step 3]
-    - Environment: Select all (Production, Preview, Development)
-    - Click "Save"
+   - Name: `AWS_SECRET_ACCESS_KEY`
+   - Value: [Paste your Secret access key from Step 3]
+   - Environment: Select all (Production, Preview, Development)
+   - Click "Save"
 
    **Variable 3:**
-    - Name: `AWS_REGION`
-    - Value: `af-south-1` (or your chosen region)
-    - Environment: Select all (Production, Preview, Development)
-    - Click "Save"
+   - Name: `AWS_REGION`
+   - Value: `af-south-1` (or your chosen region)
+   - Environment: Select all (Production, Preview, Development)
+   - Click "Save"
 
    **Variable 4:**
-    - Name: `AWS_S3_BUCKET_NAME`
-    - Value: [Your bucket name from Step 1]
-    - Environment: Select all (Production, Preview, Development)
-    - Click "Save"
+   - Name: `AWS_S3_BUCKET_NAME`
+   - Value: [Your bucket name from Step 1]
+   - Environment: Select all (Production, Preview, Development)
+   - Click "Save"
 
 3. **Redeploy Your Application**
-    - Go to the "Deployments" tab
-    - Click the three dots on the latest deployment
-    - Click "Redeploy"
-    - This ensures the new environment variables are loaded
+   - Go to the "Deployments" tab
+   - Click the three dots on the latest deployment
+   - Click "Redeploy"
+   - This ensures the new environment variables are loaded
 
 ## Step 5: Test the Integration
 
@@ -208,9 +208,9 @@ Signed URLs are temporary, secure links generated by your app that allow access 
 1. **Upload**: Receipt is uploaded to private S3 bucket
 2. **Storage**: S3 URL (without signature) is saved in database
 3. **Viewing**: When you click "View Receipt", the app:
-    - Extracts the S3 key from the stored URL
-    - Generates a signed URL valid for 1 hour
-    - Returns the signed URL to your browser
+   - Extracts the S3 key from the stored URL
+   - Generates a signed URL valid for 1 hour
+   - Returns the signed URL to your browser
 4. **Access**: Browser opens the signed URL to view the receipt
 5. **Expiration**: After 1 hour, the URL expires
 
@@ -289,12 +289,12 @@ If needed, add this CORS configuration to your bucket:
 
 \`\`\`json
 [
-{
-"AllowedHeaders": ["*"],
-"AllowedMethods": ["GET", "HEAD"],
-"AllowedOrigins": ["https://your-app.vercel.app"],
-"ExposeHeaders": []
-}
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedOrigins": ["https://your-app.vercel.app"],
+    "ExposeHeaders": []
+  }
 ]
 \`\`\`
 
@@ -322,7 +322,7 @@ If needed, add this CORS configuration to your bucket:
 - ✅ Signed URLs for temporary access
 - ✅ Automatic URL expiration
 
-### � Additional Recommendations
+### 🔒 Additional Recommendations
 
 1. **Rotate access keys** every 90 days
 2. **Enable CloudTrail** to log all S3 access

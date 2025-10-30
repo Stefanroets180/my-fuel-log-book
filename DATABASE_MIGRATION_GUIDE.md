@@ -8,6 +8,16 @@ The migration adds:
 - **Users table**: Stores user profile information (linked to Supabase Auth)
 - **Cars table**: Allows each user to have multiple cars
 - **Updated fuel_entries table**: Links entries to specific users and cars
+- **Work distance tracking**: Optional field to track work-related distance
+- **Entry locking**: Prevents accidental deletion of verified entries
+
+## Migration Scripts
+
+The following migration scripts should be run in order:
+
+1. **001_create_fuel_entries_table.sql** - Initial table creation (if starting fresh)
+2. **02-migrate-to-multi-user.sql** - Adds multi-user support (users, cars)
+3. **003_add_work_distance_and_lock.sql** - Adds work distance and lock features
 
 ## Migration Paths
 
@@ -22,7 +32,11 @@ If you're starting fresh with no existing fuel entries:
    - Copy contents of `scripts/supabase-schema.sql`
    - Paste into Supabase SQL Editor
    - Click "Run"
-3. Done! Your database is ready for multi-user support
+3. Run the work distance and lock migration:
+   - Copy contents of `scripts/003_add_work_distance_and_lock.sql`
+   - Paste into Supabase SQL Editor
+   - Click "Run"
+4. Done! Your database is ready for multi-user support
 
 ### Path B: Existing Data in Neon Database
 
@@ -39,13 +53,27 @@ COPY (SELECT * FROM fuel_entries) TO STDOUT WITH CSV HEADER;
 
 Save this output to a file called `fuel_entries_backup.csv`
 
-#### Step 2: Set Up Supabase
+#### Step 2: Apply Latest Schema Updates
+
+Before migrating to multi-user, update your existing Neon database with the latest features:
+
+\`\`\`sql
+-- In Neon SQL Editor, run the work distance and lock migration
+-- Copy and paste contents of scripts/003_add_work_distance_and_lock.sql
+\`\`\`
+
+This adds:
+- `work_distance_km` column (optional integer)
+- `is_locked` column (boolean, defaults to false)
+
+#### Step 3: Set Up Supabase
 
 1. Follow `SUPABASE_AUTHENTICATION_SETUP.md` to create your Supabase project
 2. Run the Supabase schema script (from `scripts/supabase-schema.sql`)
-3. Create your first user account by signing up in your app
+3. Run the work distance and lock migration (from `scripts/003_add_work_distance_and_lock.sql`)
+4. Create your first user account by signing up in your app
 
-#### Step 3: Get Your User UUID
+#### Step 4: Get Your User UUID
 
 After creating your account:
 
@@ -53,7 +81,7 @@ After creating your account:
 2. Click on your user
 3. Copy the UUID (looks like: `a1b2c3d4-e5f6-7890-abcd-ef1234567890`)
 
-#### Step 4: Migrate Existing Data
+#### Step 5: Migrate Existing Data
 
 Option A: Using Supabase SQL Editor
 
@@ -88,7 +116,7 @@ Option B: Using Migration Script
 3. Replace the placeholder UUIDs with your actual values
 4. Run the script in Supabase SQL Editor
 
-#### Step 5: Verify Migration
+#### Step 6: Verify Migration
 
 Check that your data was migrated:
 
@@ -99,11 +127,13 @@ SELECT * FROM public.users;
 -- Check cars
 SELECT * FROM public.cars;
 
--- Check fuel entries are linked
+-- Check fuel entries are linked with new columns
 SELECT 
   fe.id,
   fe.date,
   fe.odometer_reading,
+  fe.work_distance_km,
+  fe.is_locked,
   u.email as user_email,
   c.make || ' ' || c.model as car
 FROM public.fuel_entries fe
@@ -115,7 +145,7 @@ LIMIT 10;
 
 All entries should show your email and car information.
 
-#### Step 6: Make user_id Required (Optional)
+#### Step 7: Make user_id Required (Optional)
 
 After confirming all data is migrated:
 
@@ -160,7 +190,15 @@ CREATE TABLE cars (
 \`\`\`sql
 ALTER TABLE fuel_entries ADD COLUMN user_id UUID REFERENCES users(id);
 ALTER TABLE fuel_entries ADD COLUMN car_id UUID REFERENCES cars(id);
+-- Added work distance and lock columns
+ALTER TABLE fuel_entries ADD COLUMN work_distance_km INTEGER;
+ALTER TABLE fuel_entries ADD COLUMN is_locked BOOLEAN DEFAULT FALSE;
 \`\`\`
+
+**New Columns Explained:**
+
+- **work_distance_km**: Optional field to track the portion of distance traveled for work purposes. Useful for tax deductions (SARS). Only appears when `is_work_travel` is true.
+- **is_locked**: Boolean flag to prevent accidental deletion. When true, the entry cannot be deleted until unlocked. Useful for protecting verified or audited entries.
 
 ## Row Level Security (RLS)
 
@@ -184,6 +222,7 @@ The Supabase schema automatically sets up RLS policies to ensure:
 - Users can view only their own fuel entries
 - Users can create entries only for their own cars
 - Users can update/delete only their own entries
+- Locked entries cannot be deleted (enforced at API level)
 
 ## Testing Multi-User Isolation
 
@@ -195,6 +234,24 @@ To verify that users are properly isolated:
 4. Verify that User B cannot see User A's entries
 5. Create entries as User B
 6. Log back in as User A and verify you only see your own entries
+
+## Testing New Features
+
+### Work Distance Tracking
+
+1. Create a fuel entry and check "Work Travel"
+2. Enter a work distance (e.g., 150 km)
+3. Verify it appears in the entry details with blue highlighting
+4. Export data and confirm work distance is included
+
+### Entry Locking
+
+1. Create a fuel entry
+2. Click the lock icon to lock it
+3. Verify the "Locked" badge appears
+4. Try to delete the entry - should show error message
+5. Click unlock icon to unlock
+6. Verify you can now delete the entry
 
 ## Troubleshooting
 
@@ -234,9 +291,34 @@ To verify that users are properly isolated:
 2. Check that the API is passing user_id from the session
 3. Verify the car belongs to the current user
 
+### Issue: Cannot delete locked entries
+
+**Cause**: Entry is locked (this is expected behavior)
+
+**Solution**:
+1. Click the lock icon to unlock the entry
+2. Then try deleting again
+3. This is a safety feature to prevent accidental deletion
+
+### Issue: work_distance_km column missing
+
+**Cause**: Migration script 003 not run
+
+**Solution**:
+1. Run `scripts/003_add_work_distance_and_lock.sql` in your database
+2. Refresh the application
+
 ## Rolling Back
 
 If you need to roll back the migration:
+
+### Remove New Features
+
+\`\`\`sql
+-- Remove work distance and lock columns
+ALTER TABLE fuel_entries DROP COLUMN IF EXISTS work_distance_km;
+ALTER TABLE fuel_entries DROP COLUMN IF EXISTS is_locked;
+\`\`\`
 
 ### Remove Multi-User Columns
 
@@ -269,7 +351,8 @@ After successful migration:
 1. Update your API routes to use user_id filtering (see next task)
 2. Add car management UI
 3. Test the multi-user functionality
-4. Deploy to production
+4. Test work distance tracking and entry locking
+5. Deploy to production
 
 ## Support
 

@@ -79,30 +79,30 @@ In the new tab:
 
 \`\`\`json
 {
-"Version": "2012-10-17",
-"Statement": [
-{
-"Sid": "ReceiptUploadAccess",
-"Effect": "Allow",
-"Action": [
-"s3:PutObject",
-"s3:GetObject",
-"s3:DeleteObject"
-],
-"Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/receipts/*"
-},
-{
-"Sid": "ListBucketAccess",
-"Effect": "Allow",
-"Action": "s3:ListBucket",
-"Resource": "arn:aws:s3:::YOUR-BUCKET-NAME",
-"Condition": {
-"StringLike": {
-"s3:prefix": "receipts/*"
-}
-}
-}
-]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReceiptUploadAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/receipts/*"
+    },
+    {
+      "Sid": "ListBucketAccess",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": "receipts/*"
+        }
+      }
+    }
+  ]
 }
 \`\`\`
 
@@ -307,7 +307,7 @@ For 1 year (600 receipts, 300 MB): ~$0.12/month
 - ✅ Signed URLs for temporary, secure access
 - ✅ Automatic URL expiration (1 hour)
 
-### � Additional Recommendations
+### 🔒 Additional Recommendations
 
 1. **Rotate access keys** every 90 days
 2. **Enable CloudTrail** to log all S3 access

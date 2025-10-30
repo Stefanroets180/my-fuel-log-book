@@ -10,6 +10,8 @@ export interface FuelEntry {
   is_work_travel: boolean
   km_per_liter: number | null
   distance_traveled: number | null
+  work_distance_km: number | null
+  is_locked: boolean
   notes: string | null
   created_at: string
   updated_at: string
@@ -23,5 +25,6 @@ export interface CreateFuelEntryInput {
   petrol_station?: string
   receipt_image_url?: string
   is_work_travel: boolean
+  work_distance_km?: number
   notes?: string
 }

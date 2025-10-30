@@ -4,371 +4,438 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Trash2, Briefcase, ImageIcon, ExternalLink, AlertCircle } from "lucide-react"
+import { Loader2, Trash2, Briefcase, ImageIcon, ExternalLink, AlertCircle, Lock, Unlock } from "lucide-react"
 import type { FuelEntry } from "@/lib/types"
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface FuelLogDashboardProps {
-    refreshKey?: number
+  refreshKey?: number
 }
 
 export function FuelLogDashboard({ refreshKey }: FuelLogDashboardProps) {
-    const [entries, setEntries] = useState<FuelEntry[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [deletingId, setDeletingId] = useState<number | null>(null)
-    const [error, setError] = useState<string | null>(null)
-    const [setupRequired, setSetupRequired] = useState(false)
-    const [signedUrls, setSignedUrls] = useState<Record<number, string>>({})
+  const [entries, setEntries] = useState<FuelEntry[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [togglingLockId, setTogglingLockId] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [setupRequired, setSetupRequired] = useState(false)
+  const [signedUrls, setSignedUrls] = useState<Record<number, string>>({})
 
-    const fetchEntries = async () => {
-        try {
-            console.log("Fetching entries from API...")
-            const response = await fetch("/api/fuel-entries")
+  const fetchEntries = async () => {
+    try {
+      console.log("Fetching entries from API...")
+      const response = await fetch("/api/fuel-entries")
 
-            console.log("Response status:", response.status)
+      console.log("Response status:", response.status)
 
-            const contentType = response.headers.get("content-type")
-            if (!response.ok) {
-                if (contentType?.includes("application/json")) {
-                    const errorData = await response.json()
-                    console.error("API error:", errorData)
-                    setSetupRequired(errorData.setupRequired || false)
-                    throw new Error(errorData.details || errorData.error || "Failed to fetch entries")
-                } else {
-                    const errorText = await response.text()
-                    console.error("Non-JSON error response:", errorText)
-                    throw new Error("Server error: Unable to connect to database. Please check your Neon configuration.")
-                }
-            }
-
-            const data = await response.json()
-            console.log("Received data:", data)
-            setEntries(data.entries)
-            setError(null)
-            setSetupRequired(false)
-
-            const urlsToGenerate = data.entries.filter((entry: FuelEntry) => entry.receipt_image_url)
-            if (urlsToGenerate.length > 0) {
-                console.log("[v0] Generating signed URLs for", urlsToGenerate.length, "receipts")
-                const newSignedUrls: Record<number, string> = {}
-
-                for (const entry of urlsToGenerate) {
-                    try {
-                        const response = await fetch("/api/signed-url", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ url: entry.receipt_image_url }),
-                        })
-
-                        if (response.ok) {
-                            const { signedUrl } = await response.json()
-                            newSignedUrls[entry.id] = signedUrl
-                        }
-                    } catch (error) {
-                        console.error("[v0] Failed to generate signed URL for entry", entry.id, error)
-                    }
-                }
-
-                setSignedUrls(newSignedUrls)
-                console.log("[v0] Generated", Object.keys(newSignedUrls).length, "signed URLs")
-            }
-        } catch (error) {
-            console.error("Error fetching entries:", error)
-            setError(error instanceof Error ? error.message : "Failed to fetch entries")
-        } finally {
-            setIsLoading(false)
+      const contentType = response.headers.get("content-type")
+      if (!response.ok) {
+        if (contentType?.includes("application/json")) {
+          const errorData = await response.json()
+          console.error("API error:", errorData)
+          setSetupRequired(errorData.setupRequired || false)
+          throw new Error(errorData.details || errorData.error || "Failed to fetch entries")
+        } else {
+          const errorText = await response.text()
+          console.error("Non-JSON error response:", errorText)
+          throw new Error("Server error: Unable to connect to database. Please check your Neon configuration.")
         }
-    }
+      }
 
-    useEffect(() => {
-        fetchEntries()
-    }, [refreshKey])
+      const data = await response.json()
+      console.log("Received data:", data)
+      setEntries(data.entries)
+      setError(null)
+      setSetupRequired(false)
 
-    const handleDelete = async (id: number) => {
-        setDeletingId(id)
-        try {
-            const response = await fetch(`/api/fuel-entries/${id}`, {
-                method: "DELETE",
+      const urlsToGenerate = data.entries.filter((entry: FuelEntry) => entry.receipt_image_url)
+      if (urlsToGenerate.length > 0) {
+        console.log("[v0] Generating signed URLs for", urlsToGenerate.length, "receipts")
+        const newSignedUrls: Record<number, string> = {}
+
+        for (const entry of urlsToGenerate) {
+          try {
+            const response = await fetch("/api/signed-url", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url: entry.receipt_image_url }),
             })
 
-            if (!response.ok) throw new Error("Failed to delete entry")
-
-            setEntries((prev) => prev.filter((entry) => entry.id !== id))
-            setSignedUrls((prev) => {
-                const newUrls = { ...prev }
-                delete newUrls[id]
-                return newUrls
-            })
-        } catch (error) {
-            console.error("Error deleting entry:", error)
-            alert("Failed to delete entry. Please try again.")
-        } finally {
-            setDeletingId(null)
+            if (response.ok) {
+              const { signedUrl } = await response.json()
+              newSignedUrls[entry.id] = signedUrl
+            }
+          } catch (error) {
+            console.error("[v0] Failed to generate signed URL for entry", entry.id, error)
+          }
         }
+
+        setSignedUrls(newSignedUrls)
+        console.log("[v0] Generated", Object.keys(newSignedUrls).length, "signed URLs")
+      }
+    } catch (error) {
+      console.error("Error fetching entries:", error)
+      setError(error instanceof Error ? error.message : "Failed to fetch entries")
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString("en-ZA", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-        })
+  useEffect(() => {
+    fetchEntries()
+  }, [refreshKey])
+
+  const handleToggleLock = async (id: number, currentLockStatus: boolean) => {
+    setTogglingLockId(id)
+    try {
+      const response = await fetch(`/api/fuel-entries/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_locked: !currentLockStatus }),
+      })
+
+      if (!response.ok) throw new Error("Failed to toggle lock status")
+
+      const { entry } = await response.json()
+      setEntries((prev) => prev.map((e) => (e.id === id ? entry : e)))
+    } catch (error) {
+      console.error("Error toggling lock:", error)
+      alert("Failed to toggle lock status. Please try again.")
+    } finally {
+      setTogglingLockId(null)
     }
+  }
 
-    const formatCurrency = (amount: number) => {
-        return `R ${amount.toFixed(2)}`
+  const handleDelete = async (id: number) => {
+    setDeletingId(id)
+    try {
+      const response = await fetch(`/api/fuel-entries/${id}`, {
+        method: "DELETE",
+      })
+
+      if (response.status === 403) {
+        const errorData = await response.json()
+        alert(errorData.error)
+        setDeletingId(null)
+        return
+      }
+
+      if (!response.ok) throw new Error("Failed to delete entry")
+
+      setEntries((prev) => prev.filter((entry) => entry.id !== id))
+      setSignedUrls((prev) => {
+        const newUrls = { ...prev }
+        delete newUrls[id]
+        return newUrls
+      })
+    } catch (error) {
+      console.error("Error deleting entry:", error)
+      alert("Failed to delete entry. Please try again.")
+    } finally {
+      setDeletingId(null)
     }
+  }
 
-    const totalSpent = entries.reduce((sum, entry) => sum + Number(entry.total_cost), 0)
-    const totalLiters = entries.reduce((sum, entry) => sum + Number(entry.liters), 0)
-    const averageKmPerLiter =
-        entries.filter((e) => e.km_per_liter).reduce((sum, entry) => sum + Number(entry.km_per_liter), 0) /
-        entries.filter((e) => e.km_per_liter).length || 0
-    const workTravelEntries = entries.filter((e) => e.is_work_travel).length
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-ZA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+  }
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center p-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        )
-    }
+  const formatCurrency = (amount: number) => {
+    return `R ${amount.toFixed(2)}`
+  }
 
-    if (error) {
-        return (
-            <Card className="border-destructive">
-                <CardHeader>
-                    <CardTitle className="text-destructive flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5" />
-                        {setupRequired ? "Database Setup Required" : "Database Error"}
-                    </CardTitle>
-                    <CardDescription>
-                        {setupRequired
-                            ? "The database table needs to be created before you can use the app."
-                            : "Unable to load fuel entries. Please check your database configuration."}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error Details</AlertTitle>
-                        <AlertDescription className="font-mono text-xs mt-2">{error}</AlertDescription>
-                    </Alert>
+  const totalSpent = entries.reduce((sum, entry) => sum + Number(entry.total_cost), 0)
+  const totalLiters = entries.reduce((sum, entry) => sum + Number(entry.liters), 0)
+  const averageKmPerLiter =
+    entries.filter((e) => e.km_per_liter).reduce((sum, entry) => sum + Number(entry.km_per_liter), 0) /
+      entries.filter((e) => e.km_per_liter).length || 0
+  const workTravelEntries = entries.filter((e) => e.is_work_travel).length
 
-                    <div className="space-y-3 rounded-lg bg-muted p-4">
-                        <p className="text-sm font-semibold">Setup Instructions:</p>
-                        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                            <li>
-                                Open the <code className="bg-background px-1.5 py-0.5 rounded text-xs">scripts</code> folder in your
-                                project
-                            </li>
-                            <li>
-                                Locate the file:{" "}
-                                <code className="bg-background px-1.5 py-0.5 rounded text-xs">001_create_fuel_entries_table.sql</code>
-                            </li>
-                            <li>
-                                Go to your{" "}
-                                <a
-                                    href="https://console.neon.tech"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                >
-                                    Neon Console
-                                </a>
-                            </li>
-                            <li>Select your project and navigate to the SQL Editor</li>
-                            <li>Copy and paste the SQL script content into the editor</li>
-                            <li>Click "Run" to create the fuel_entries table</li>
-                            <li>Return here and click the "Retry Connection" button below</li>
-                        </ol>
-                    </div>
-
-                    <div className="space-y-2 rounded-lg bg-muted p-4">
-                        <p className="text-sm font-semibold">Environment Variables Check:</p>
-                        <p className="text-xs text-muted-foreground">
-                            Make sure <code className="bg-background px-1.5 py-0.5 rounded">NEON_NEON_DATABASE_URL</code> is set in
-                            your Vercel project settings or local .env file.
-                        </p>
-                    </div>
-
-                    <Button
-                        onClick={() => {
-                            setIsLoading(true)
-                            setError(null)
-                            fetchEntries()
-                        }}
-                        className="w-full"
-                    >
-                        Retry Connection
-                    </Button>
-                </CardContent>
-            </Card>
-        )
-    }
-
+  if (isLoading) {
     return (
-        <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardDescription>Total Spent</CardDescription>
-                        <CardTitle className="text-3xl">{formatCurrency(totalSpent)}</CardTitle>
-                    </CardHeader>
-                </Card>
-
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardDescription>Total Liters</CardDescription>
-                        <CardTitle className="text-3xl">{totalLiters.toFixed(1)} L</CardTitle>
-                    </CardHeader>
-                </Card>
-
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardDescription>Avg. Consumption</CardDescription>
-                        <CardTitle className="text-3xl">{averageKmPerLiter.toFixed(1)} km/L</CardTitle>
-                    </CardHeader>
-                </Card>
-
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardDescription>Work Travel</CardDescription>
-                        <CardTitle className="text-3xl">{workTravelEntries}</CardTitle>
-                    </CardHeader>
-                </Card>
-            </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Fuel Entries</CardTitle>
-                    <CardDescription>Your complete fuel purchase history</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {entries.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-8">
-                            No fuel entries yet. Add your first entry to get started!
-                        </p>
-                    ) : (
-                        <div className="space-y-4">
-                            {entries.map((entry) => (
-                                <div
-                                    key={entry.id}
-                                    className="flex flex-col gap-4 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors"
-                                >
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="font-semibold text-lg">{formatDate(entry.date)}</span>
-                                                {entry.is_work_travel && (
-                                                    <Badge variant="secondary" className="gap-1">
-                                                        <Briefcase className="h-3 w-3" />
-                                                        Work Travel
-                                                    </Badge>
-                                                )}
-                                                {entry.petrol_station && <Badge variant="outline">{entry.petrol_station}</Badge>}
-                                            </div>
-
-                                            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 text-sm">
-                                                <div>
-                                                    <span className="text-muted-foreground">Odometer:</span>{" "}
-                                                    <span className="font-medium">{entry.odometer_reading.toLocaleString()} km</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-muted-foreground">Liters:</span>{" "}
-                                                    <span className="font-medium">{Number(entry.liters).toFixed(2)} L</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-muted-foreground">Price/L:</span>{" "}
-                                                    <span className="font-medium">{formatCurrency(Number(entry.price_per_liter))}</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-muted-foreground">Total:</span>{" "}
-                                                    <span className="font-semibold text-lg">{formatCurrency(Number(entry.total_cost))}</span>
-                                                </div>
-                                                {entry.km_per_liter && (
-                                                    <div>
-                                                        <span className="text-muted-foreground">Consumption:</span>{" "}
-                                                        <span className="font-medium">{Number(entry.km_per_liter).toFixed(2)} km/L</span>
-                                                    </div>
-                                                )}
-                                                {entry.distance_traveled && (
-                                                    <div>
-                                                        <span className="text-muted-foreground">Distance:</span>{" "}
-                                                        <span className="font-medium">{entry.distance_traveled} km</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {entry.notes && (
-                                                <p className="text-sm text-muted-foreground italic border-l-2 border-border pl-3">
-                                                    {entry.notes}
-                                                </p>
-                                            )}
-
-                                            {entry.receipt_image_url && signedUrls[entry.id] && (
-                                                <div className="flex items-center gap-2">
-                                                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                                                    <a
-                                                        href={signedUrls[entry.id]}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-sm text-primary hover:underline flex items-center gap-1"
-                                                    >
-                                                        View Receipt
-                                                        <ExternalLink className="h-3 w-3" />
-                                                    </a>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" disabled={deletingId === entry.id} className="shrink-0">
-                                                    {deletingId === entry.id ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <Trash2 className="h-4 w-4" />
-                                                    )}
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete Fuel Entry?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This will permanently delete this fuel entry from {formatDate(entry.date)}. This action
-                                                        cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction
-                                                        onClick={() => handleDelete(entry.id)}
-                                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                    >
-                                                        Delete
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     )
+  }
+
+  if (error) {
+    return (
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            {setupRequired ? "Database Setup Required" : "Database Error"}
+          </CardTitle>
+          <CardDescription>
+            {setupRequired
+              ? "The database table needs to be created before you can use the app."
+              : "Unable to load fuel entries. Please check your database configuration."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Details</AlertTitle>
+            <AlertDescription className="font-mono text-xs mt-2">{error}</AlertDescription>
+          </Alert>
+
+          <div className="space-y-3 rounded-lg bg-muted p-4">
+            <p className="text-sm font-semibold">Setup Instructions:</p>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+              <li>
+                Open the <code className="bg-background px-1.5 py-0.5 rounded text-xs">scripts</code> folder in your
+                project
+              </li>
+              <li>
+                Locate the file:{" "}
+                <code className="bg-background px-1.5 py-0.5 rounded text-xs">001_create_fuel_entries_table.sql</code>
+              </li>
+              <li>
+                Go to your{" "}
+                <a
+                  href="https://console.neon.tech"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Neon Console
+                </a>
+              </li>
+              <li>Select your project and navigate to the SQL Editor</li>
+              <li>Copy and paste the SQL script content into the editor</li>
+              <li>Click "Run" to create the fuel_entries table</li>
+              <li>Return here and click the "Retry Connection" button below</li>
+            </ol>
+          </div>
+
+          <div className="space-y-2 rounded-lg bg-muted p-4">
+            <p className="text-sm font-semibold">Environment Variables Check:</p>
+            <p className="text-xs text-muted-foreground">
+              Make sure <code className="bg-background px-1.5 py-0.5 rounded">NEON_NEON_DATABASE_URL</code> is set in
+              your Vercel project settings or local .env file.
+            </p>
+          </div>
+
+          <Button
+            onClick={() => {
+              setIsLoading(true)
+              setError(null)
+              fetchEntries()
+            }}
+            className="w-full"
+          >
+            Retry Connection
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Total Spent</CardDescription>
+            <CardTitle className="text-3xl">{formatCurrency(totalSpent)}</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Total Liters</CardDescription>
+            <CardTitle className="text-3xl">{totalLiters.toFixed(1)} L</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Avg. Consumption</CardDescription>
+            <CardTitle className="text-3xl">{averageKmPerLiter.toFixed(1)} km/L</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Work Travel</CardDescription>
+            <CardTitle className="text-3xl">{workTravelEntries}</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Fuel Entries</CardTitle>
+          <CardDescription>Your complete fuel purchase history</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {entries.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              No fuel entries yet. Add your first entry to get started!
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {entries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex flex-col gap-4 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-lg">{formatDate(entry.date)}</span>
+                        {entry.is_locked && (
+                          <Badge variant="default" className="gap-1 bg-amber-500 hover:bg-amber-600">
+                            <Lock className="h-3 w-3" />
+                            Locked
+                          </Badge>
+                        )}
+                        {entry.is_work_travel && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Briefcase className="h-3 w-3" />
+                            Work Travel
+                          </Badge>
+                        )}
+                        {entry.petrol_station && <Badge variant="outline">{entry.petrol_station}</Badge>}
+                      </div>
+
+                      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Odometer:</span>{" "}
+                          <span className="font-medium">{entry.odometer_reading.toLocaleString()} km</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Liters:</span>{" "}
+                          <span className="font-medium">{Number(entry.liters).toFixed(2)} L</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Price/L:</span>{" "}
+                          <span className="font-medium">{formatCurrency(Number(entry.price_per_liter))}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Total:</span>{" "}
+                          <span className="font-semibold text-lg">{formatCurrency(Number(entry.total_cost))}</span>
+                        </div>
+                        {entry.km_per_liter && (
+                          <div>
+                            <span className="text-muted-foreground">Consumption:</span>{" "}
+                            <span className="font-medium">{Number(entry.km_per_liter).toFixed(2)} km/L</span>
+                          </div>
+                        )}
+                        {entry.distance_traveled && (
+                          <div>
+                            <span className="text-muted-foreground">Distance:</span>{" "}
+                            <span className="font-medium">{entry.distance_traveled} km</span>
+                          </div>
+                        )}
+                        {entry.work_distance_km && (
+                          <div>
+                            <span className="text-muted-foreground">Work Distance:</span>{" "}
+                            <span className="font-medium text-blue-600 dark:text-blue-400">
+                              {entry.work_distance_km} km
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {entry.notes && (
+                        <p className="text-sm text-muted-foreground italic border-l-2 border-border pl-3">
+                          {entry.notes}
+                        </p>
+                      )}
+
+                      {entry.receipt_image_url && signedUrls[entry.id] && (
+                        <div className="flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={signedUrls[entry.id]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline flex items-center gap-1"
+                          >
+                            View Receipt
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleToggleLock(entry.id, entry.is_locked)}
+                        disabled={togglingLockId === entry.id}
+                        title={entry.is_locked ? "Unlock entry" : "Lock entry to prevent deletion"}
+                      >
+                        {togglingLockId === entry.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : entry.is_locked ? (
+                          <Lock className="h-4 w-4 text-amber-500" />
+                        ) : (
+                          <Unlock className="h-4 w-4" />
+                        )}
+                      </Button>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={deletingId === entry.id || entry.is_locked}
+                            className="shrink-0"
+                            title={entry.is_locked ? "Unlock entry first to delete" : "Delete entry"}
+                          >
+                            {deletingId === entry.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className={`h-4 w-4 ${entry.is_locked ? "opacity-50" : ""}`} />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Fuel Entry?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete this fuel entry from {formatDate(entry.date)}. This action
+                              cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(entry.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
 }

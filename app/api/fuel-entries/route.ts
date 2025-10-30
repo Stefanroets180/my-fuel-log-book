@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       petrol_station,
       receipt_image_url,
       is_work_travel,
+      work_distance_km,
       notes,
     } = body
 
@@ -94,6 +95,8 @@ export async function POST(request: NextRequest) {
         is_work_travel,
         km_per_liter,
         distance_traveled,
+        work_distance_km,
+        is_locked,
         notes
       ) VALUES (
         ${date},
@@ -106,6 +109,8 @@ export async function POST(request: NextRequest) {
         ${is_work_travel},
         ${km_per_liter},
         ${distance_traveled},
+        ${work_distance_km || null},
+        ${false},
         ${notes || null}
       )
       RETURNING *
