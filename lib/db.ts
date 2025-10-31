@@ -1,20 +1,23 @@
-import { createClient } from "@supabase/supabase-js"
+import postgres from "postgres"
 
-// Use Supabase for database queries
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Create a postgres client using Supabase connection string
+// The connection string should be in format: postgresql://[user]:[password]@[host]:[port]/[database]
+const connectionString =
+    process.env.DATABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.replace("https://", "postgresql://postgres:") + "/postgres"
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-// Helper function to execute SQL queries
-export async function sql(query: string, params?: any[]) {
-  const { data, error } = await supabase.rpc("execute_sql", {
-    query,
-    params: params || [],
-  })
-
-  if (error) throw error
-  return data
+if (!connectionString) {
+    throw new Error("DATABASE_URL environment variable is not set. Please add it to your .env.local file.")
 }
 
-export { supabase }
+// Initialize postgres client with tagged template literal support
+export const sql = postgres(connectionString, {
+    // Automatically handle connection pooling
+    max: 10,
+    // Idle timeout
+    idle_timeout: 20,
+    // Connection timeout
+    connect_timeout: 10,
+})
+
+export default sql
