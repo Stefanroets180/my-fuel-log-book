@@ -1,4 +1,4 @@
-/*import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { sql } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
@@ -145,9 +145,10 @@ export async function DELETE(
     console.error('Error deleting car:', error)
     return NextResponse.json({ error: 'Failed to delete car' }, { status: 500 })
   }
-}*/
+}
 
 
+/*
 // Placeholder API when Supabase is not installed
 import { NextResponse } from "next/server"
 
@@ -162,3 +163,4 @@ export async function PUT() {
 export async function DELETE() {
   return NextResponse.json({ error: "Authentication not configured" }, { status: 503 })
 }
+*/

@@ -1,4 +1,4 @@
-/*import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { sql } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
@@ -12,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // @ts-ignore
+    
       const cars = await sql`
       SELECT * FROM cars 
       WHERE user_id = ${user.id}
@@ -90,9 +90,10 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ error: 'Failed to create car' }, { status: 500 })
   }
-}*/
+}
 
 
+/*
 // Placeholder API when Supabase is not installed
 import { NextResponse } from "next/server"
 
@@ -109,3 +110,4 @@ export async function POST() {
     { status: 503 },
   )
 }
+*/
